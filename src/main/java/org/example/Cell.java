@@ -2,7 +2,6 @@ package org.example;
 
 public class Cell {
     private String value;
-
     public Cell(String value) {
         this.value = value;
     }
@@ -24,14 +23,12 @@ public class Cell {
         }
     }
 
-    public boolean isFormula(String value) {
-       boolean bool= value.startsWith("=");
-
-       return bool;
+    public boolean isForm(String value) {
+        return value.startsWith("=");
     }
 
     public boolean isText(String value) {
-        return !isNumber(value) && !isFormula(value);
+        return !isNumber(value) && !isForm(value);
     }
 
 }
