@@ -77,7 +77,6 @@ public class SCell implements Cell {
 
     // Validate a formula string
     public static boolean isValidForm(String formula) {
-
         // A simple regex to match basic formulas
         String validFormulaRegex = "^[-+*/0-9A-Za-z().]+$";
         if (!Pattern.matches(validFormulaRegex, formula)) {
