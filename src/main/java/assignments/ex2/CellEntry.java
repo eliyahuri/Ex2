@@ -57,7 +57,9 @@ public class CellEntry implements Index2D {
 
     @Override
     public String toString() {
-        if (!isValid()) return "Invalid Index";
+        if (!isValid()) {
+            return "Invalid Index";
+        }
         char columnChar = (char) ('A' + x);
         return columnChar + Integer.toString(y);
     }
