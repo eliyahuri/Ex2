@@ -20,10 +20,10 @@ public class SCell implements Cell {
     public void setData(String s) {
         this.line = s;
         // Determine the type of the cell based on its content
-        if (isNumber(s)) {
-            type = Ex2Utils.NUMBER;
-        } else if (isForm(s)) {
+        if (isForm(s)) {
             type = Ex2Utils.FORM;
+        } else if (isNumber(s)) {
+            type = Ex2Utils.NUMBER;
         } else if (isText(s)) {
             type = Ex2Utils.TEXT;
         } else {
