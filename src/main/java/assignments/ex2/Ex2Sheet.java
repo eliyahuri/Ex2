@@ -1,114 +1,139 @@
 package assignments.ex2;
+
+import java.io.FileWriter;
 import java.io.IOException;
-// Add your documentation below:
+import java.io.Writer;
+
+
 
 public class Ex2Sheet implements Sheet {
     private Cell[][] table;
-    // Add your code here
 
-    // ///////////////////
-    public Ex2Sheet(int x, int y) {
-        table = new SCell[x][y];
-        for(int i=0;i<x;i=i+1) {
-            for(int j=0;j<y;j=j+1) {
-                table[i][j] = new SCell("");
+    public Ex2Sheet(int width, int height) {
+        table = new SCell[width][height];
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                table[x][y] = new SCell(Ex2Utils.EMPTY_CELL);
             }
         }
-        eval();
     }
+
     public Ex2Sheet() {
         this(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
     }
 
     @Override
-    public String value(int x, int y) {
-        String ans = Ex2Utils.EMPTY_CELL;
-        // Add your code here
-
-        Cell c = get(x,y);
-        if(c!=null) {ans = c.toString();}
-
-        /////////////////////
-        return ans;
-    }
-
-    @Override
-    public Cell get(int x, int y) {
-        return table[x][y];
-    }
-
-    @Override
-    public Cell get(String cords) {
-        Cell ans = null;
-        // Add your code here
-
-        /////////////////////
-        return ans;
+    public boolean isIn(int x, int y) {
+        return x >= 0 && x < table.length && y >= 0 && y < table[0].length;
     }
 
     @Override
     public int width() {
         return table.length;
     }
+
     @Override
     public int height() {
         return table[0].length;
     }
-    @Override
-    public void set(int x, int y, String s) {
-        Cell c = new SCell(s);
-        table[x][y] = c;
-        // Add your code here
 
-        /////////////////////
-    }
     @Override
-    public void eval() {
-        int[][] dd = depth();
-        // Add your code here
-
-        // ///////////////////
+    public void set(int x, int y, String data) {
+        if (isIn(x, y)) {
+            table[x][y] = new SCell(data);
+        }
     }
 
     @Override
-    public boolean isIn(int xx, int yy) {
-        boolean ans = xx>=0 && yy>=0;
-        // Add your code here
-
-        /////////////////////
-        return ans;
+    public Cell get(int x, int y) {
+        if (isIn(x, y)) {
+            return table[x][y];
+        }
+        return null;
     }
 
     @Override
-    public int[][] depth() {
-        int[][] ans = new int[width()][height()];
-        // Add your code here
-
-        // ///////////////////
-        return ans;
+    public Cell get(String coords) {
+        CellEntry entry = new CellEntry(coords);
+        if (entry.isValid() && isIn(entry.getX(), entry.getY())) {
+            return get(entry.getX(), entry.getY());
+        }
+        return null;
     }
 
     @Override
-    public void load(String fileName) throws IOException {
-        // Add your code here
-
-        /////////////////////
-    }
-
-    @Override
-    public void save(String fileName) throws IOException {
-        // Add your code here
-
-        /////////////////////
+    public String value(int x, int y) {
+        Cell cell = get(x, y);
+        return cell != null ? cell.getData() : Ex2Utils.EMPTY_CELL;
     }
 
     @Override
     public String eval(int x, int y) {
-        String ans = null;
-        if(get(x,y)!=null) {ans = get(x,y).toString();}
-        // Add your code here
-
-        /////////////////////
-        return ans;
+        Cell cell = get(x, y);
+        if (cell == null) {
+            return Ex2Utils.EMPTY_CELL;
         }
+        String data = cell.getData();
+        return switch (cell.getType()) {
+            case Ex2Utils.NUMBER -> data;
+            case Ex2Utils.TEXT -> data;
+            case Ex2Utils.FORM -> evaluateFormula(data);
+            default -> Ex2Utils.ERR_FORM;
+        };
+    }
+
+    private String evaluateFormula(String formula) {
+        // This is where you would parse and evaluate the formula.
+        // For simplicity, returning the formula itself.
+        return formula;
+    }
+
+    @Override
+    public void eval() {
+        for (int x = 0; x < width(); x++) {
+            for (int y = 0; y < height(); y++) {
+                eval(x, y);
+            }
+        }
+    }
+
+    @Override
+    public int[][] depth() {
+        int[][] depths = new int[width()][height()];
+        for (int x = 0; x < width(); x++) {
+            for (int y = 0; y < height(); y++) {
+                depths[x][y] = computeDepth(x, y);
+            }
+        }
+        return depths;
+    }
+
+    private int computeDepth(int x, int y) {
+        // Simple stub for depth calculation.
+        // Replace with actual dependency depth logic.
+        return 0;
+    }
+
+    @Override
+    public void save(String fileName) throws IOException {
+        try (Writer writer = new FileWriter(fileName)) {
+            writer.write("I2CS ArielU: SpreadSheet (Ex2) assignment\n");
+            for (int x = 0; x < width(); x++) {
+                for (int y = 0; y < height(); y++) {
+                    Cell cell = get(x, y);
+                    if (cell != null && !cell.getData().isEmpty()) {
+                        writer.write(x + "," + y + "," + cell.getData() + "\n");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void load(String fileName) {
+        // Implement the loading logic using a Reader class or manual parsing.
+        // Ensure that old data is cleared and replaced with loaded content.
+    }
 }
