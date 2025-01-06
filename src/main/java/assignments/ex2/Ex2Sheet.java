@@ -11,7 +11,7 @@ public class Ex2Sheet implements Sheet {
 
     /**
      * Constructor to initialize a spreadsheet with specified width and height.
-     * 
+     *
      * @param width  the number of columns in the spreadsheet.
      * @param height the number of rows in the spreadsheet.
      */
@@ -81,7 +81,7 @@ public class Ex2Sheet implements Sheet {
             return Ex2Utils.EMPTY_CELL;
         }
         String data = cell.getData();
-        
+
         return switch (cell.getType()) {
             case Ex2Utils.FORM -> evaluateFormula(data);
             case Ex2Utils.NUMBER -> data;
@@ -91,7 +91,6 @@ public class Ex2Sheet implements Sheet {
     }
 
     public String evaluateFormula(String formula) {
-
         if (formula == null || formula.isEmpty() || !formula.startsWith("=")) {
             return Ex2Utils.ERR_FORM;
         }
@@ -101,6 +100,10 @@ public class Ex2Sheet implements Sheet {
         try {
             // Split the formula into tokens (operands and operators)
             String[] tokens = formula.split(" ");
+            if (tokens.length % 2 == 0) {
+                // Formula must have an odd number of tokens (e.g., "1 + 2")
+                return Ex2Utils.ERR_FORM;
+            }
 
             // First pass: handle multiplication and division
             double[] values = new double[tokens.length];
@@ -111,14 +114,25 @@ public class Ex2Sheet implements Sheet {
             double currentValue = getValue(tokens[0]);
             for (int i = 1; i < tokens.length; i += 2) {
                 String operator = tokens[i];
+                if (i + 1 >= tokens.length) {
+                    // Missing operand after an operator
+                    return Ex2Utils.ERR_FORM;
+                }
                 double nextValue = getValue(tokens[i + 1]);
 
                 if (operator.equals("*") || operator.equals("/")) {
+                    if (operator.equals("/") && nextValue == 0) {
+                        // Division by zero
+                        return Ex2Utils.ERR_FORM;
+                    }
                     currentValue = applyOperator(currentValue, nextValue, operator);
-                } else {
+                } else if (operator.equals("+") || operator.equals("-")) {
                     values[valueIndex++] = currentValue;
                     operators[operatorIndex++] = operator;
                     currentValue = nextValue;
+                } else {
+                    // Invalid operator
+                    return Ex2Utils.ERR_FORM;
                 }
             }
             values[valueIndex++] = currentValue;
@@ -164,8 +178,8 @@ public class Ex2Sheet implements Sheet {
     public void eval() {
         for (int x = 0; x < width(); x++) {
             for (int y = 0; y < height(); y++) {
-                eval(x, y);
-
+                String evaluatedValue = eval(x, y);
+                table[x][y] = new SCell(evaluatedValue);
             }
         }
     }
