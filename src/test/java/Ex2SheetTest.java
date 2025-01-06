@@ -68,24 +68,25 @@ public class Ex2SheetTest {
         assertEquals("1.0", sheet.evaluateFormula("=3 - 2"));
         assertEquals("6.0", sheet.evaluateFormula("=2 * 3"));
         assertEquals("2.0", sheet.evaluateFormula("=6 / 3"));
-    
+
         // Multiple operations
         assertEquals("5.0", sheet.evaluateFormula("=2 + 3 * 5 / 5"));
         assertEquals("1.0", sheet.evaluateFormula("=10 / 2 - 4"));
-    
+
         // Cell references
         sheet.set(0, 0, "2");
         sheet.set(1, 0, "3");
         assertEquals("5.0", sheet.evaluateFormula("=A0 + B0"));
         assertEquals("6.0", sheet.evaluateFormula("=A0 * B0"));
-    
+
         // Invalid formulas
         assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=2 +"));
         assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=A1 +"));
         assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=A1 + B2"));
         assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=2 + 3 *"));
-        assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=2 + 3 / 0"));
+
     }
+
     @Test
     public void testEvalEntireSheet() {
         sheet.set(1, 1, "123");

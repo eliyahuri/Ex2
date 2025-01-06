@@ -81,16 +81,17 @@ public class Ex2Sheet implements Sheet {
             return Ex2Utils.EMPTY_CELL;
         }
         String data = cell.getData();
+        
         return switch (cell.getType()) {
+            case Ex2Utils.FORM -> evaluateFormula(data);
             case Ex2Utils.NUMBER -> data;
             case Ex2Utils.TEXT -> data;
-            case Ex2Utils.FORM -> evaluateFormula(data);
             default -> Ex2Utils.ERR_FORM;
         };
     }
 
     public String evaluateFormula(String formula) {
-  
+
         if (formula == null || formula.isEmpty() || !formula.startsWith("=")) {
             return Ex2Utils.ERR_FORM;
         }
@@ -164,6 +165,7 @@ public class Ex2Sheet implements Sheet {
         for (int x = 0; x < width(); x++) {
             for (int y = 0; y < height(); y++) {
                 eval(x, y);
+
             }
         }
     }
