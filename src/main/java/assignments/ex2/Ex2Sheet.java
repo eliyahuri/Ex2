@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.Writer;
 
 public class Ex2Sheet implements Sheet {
-    private final Cell[][] table;
+    private Cell[][] table;
 
     /**
      * Constructor to initialize a spreadsheet with specified width and height.
