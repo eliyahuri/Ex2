@@ -89,9 +89,73 @@ public class Ex2Sheet implements Sheet {
         };
     }
 
-    private String evaluateFormula(String formula) {
-           // Placeholder for formula evaluation logic.
-           return formula;
+    public String evaluateFormula(String formula) {
+        if (formula == null || formula.isEmpty() || !formula.startsWith("=")) {
+            return Ex2Utils.ERR_FORM;
+        }
+
+        formula = formula.substring(1); // Remove the '=' at the beginning
+
+        try {
+            // Split the formula into tokens (operands and operators)
+            String[] tokens = formula.split(" ");
+
+            // First pass: handle multiplication and division
+            double[] values = new double[tokens.length];
+            String[] operators = new String[tokens.length];
+            int valueIndex = 0;
+            int operatorIndex = 0;
+
+            double currentValue = getValue(tokens[0]);
+            for (int i = 1; i < tokens.length; i += 2) {
+                String operator = tokens[i];
+                double nextValue = getValue(tokens[i + 1]);
+
+                if (operator.equals("*") || operator.equals("/")) {
+                    currentValue = applyOperator(currentValue, nextValue, operator);
+                } else {
+                    values[valueIndex++] = currentValue;
+                    operators[operatorIndex++] = operator;
+                    currentValue = nextValue;
+                }
+            }
+            values[valueIndex++] = currentValue;
+
+            // Second pass: handle addition and subtraction
+            double result = values[0];
+            for (int i = 0; i < operatorIndex; i++) {
+                result = applyOperator(result, values[i + 1], operators[i]);
+            }
+
+            return String.valueOf(result);
+        } catch (Exception e) {
+            return Ex2Utils.ERR_FORM;
+        }
+    }
+
+    private double getValue(String token) {
+        if (Character.isLetter(token.charAt(0))) {
+            // It's a cell reference
+            Cell cell = get(token);
+            if (cell != null && cell.getType() == Ex2Utils.NUMBER) {
+                return Double.parseDouble(cell.getData());
+            } else {
+                throw new IllegalArgumentException("Invalid cell reference or non-numeric cell");
+            }
+        } else {
+            // It's a number
+            return Double.parseDouble(token);
+        }
+    }
+
+    private double applyOperator(double a, double b, String operator) {
+        return switch (operator) {
+            case "+" -> a + b;
+            case "-" -> a - b;
+            case "*" -> a * b;
+            case "/" -> a / b;
+            default -> throw new IllegalArgumentException("Invalid operator");
+        };
     }
 
     @Override
