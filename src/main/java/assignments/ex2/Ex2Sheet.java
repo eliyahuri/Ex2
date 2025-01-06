@@ -90,6 +90,7 @@ public class Ex2Sheet implements Sheet {
     }
 
     public String evaluateFormula(String formula) {
+  
         if (formula == null || formula.isEmpty() || !formula.startsWith("=")) {
             return Ex2Utils.ERR_FORM;
         }

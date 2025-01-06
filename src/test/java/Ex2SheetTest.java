@@ -76,8 +76,8 @@ public class Ex2SheetTest {
         // Cell references
         sheet.set(0, 0, "2");
         sheet.set(1, 0, "3");
-        assertEquals("5.0", sheet.evaluateFormula("=A1 + B1"));
-        assertEquals("6.0", sheet.evaluateFormula("=A1 * B1"));
+        assertEquals("5.0", sheet.evaluateFormula("=A0 + B0"));
+        assertEquals("6.0", sheet.evaluateFormula("=A0 * B0"));
     
         // Invalid formulas
         assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=2 +"));
