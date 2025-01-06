@@ -4,11 +4,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
-
-
 public class Ex2Sheet implements Sheet {
-    private Cell[][] table;
+    private final Cell[][] table;
 
+    /**
+     * Constructor to initialize a spreadsheet with specified width and height.
+     * @param width the number of columns in the spreadsheet.
+     * @param height the number of rows in the spreadsheet.
+     */
     public Ex2Sheet(int width, int height) {
         table = new SCell[width][height];
         for (int x = 0; x < width; x++) {
@@ -18,6 +21,9 @@ public class Ex2Sheet implements Sheet {
         }
     }
 
+    /**
+     * Default constructor that initializes the spreadsheet with predefined dimensions.
+     */
     public Ex2Sheet() {
         this(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
     }
@@ -46,10 +52,7 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public Cell get(int x, int y) {
-        if (isIn(x, y)) {
-            return table[x][y];
-        }
-        return null;
+        return isIn(x, y) ? table[x][y] : null;
     }
 
     @Override
@@ -83,8 +86,7 @@ public class Ex2Sheet implements Sheet {
     }
 
     private String evaluateFormula(String formula) {
-        // This is where you would parse and evaluate the formula.
-        // For simplicity, returning the formula itself.
+        // Placeholder for formula evaluation logic.
         return formula;
     }
 
@@ -109,8 +111,7 @@ public class Ex2Sheet implements Sheet {
     }
 
     private int computeDepth(int x, int y) {
-        // Simple stub for depth calculation.
-        // Replace with actual dependency depth logic.
+        // Placeholder for dependency depth calculation.
         return 0;
     }
 
@@ -128,12 +129,14 @@ public class Ex2Sheet implements Sheet {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            throw e;
         }
     }
 
     @Override
-    public void load(String fileName) {
-        // Implement the loading logic using a Reader class or manual parsing.
-        // Ensure that old data is cleared and replaced with loaded content.
+    public void load(String fileName) throws IOException {
+        // Placeholder for load implementation.
+        // Clear existing data and load content from the file.
+        // Validate and parse each line as per the file format.
     }
 }
