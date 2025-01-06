@@ -55,7 +55,7 @@ public class SCell implements Cell {
      */
     private boolean isNumber(String data) {
         try {
-            Double.parseDouble(data);
+            Double.valueOf(data);
             return true;
         } catch (NumberFormatException e) {
             return false;

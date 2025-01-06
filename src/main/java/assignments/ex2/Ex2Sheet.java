@@ -1,5 +1,7 @@
 package assignments.ex2;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -9,7 +11,8 @@ public class Ex2Sheet implements Sheet {
 
     /**
      * Constructor to initialize a spreadsheet with specified width and height.
-     * @param width the number of columns in the spreadsheet.
+     * 
+     * @param width  the number of columns in the spreadsheet.
      * @param height the number of rows in the spreadsheet.
      */
     public Ex2Sheet(int width, int height) {
@@ -22,7 +25,8 @@ public class Ex2Sheet implements Sheet {
     }
 
     /**
-     * Default constructor that initializes the spreadsheet with predefined dimensions.
+     * Default constructor that initializes the spreadsheet with predefined
+     * dimensions.
      */
     public Ex2Sheet() {
         this(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
@@ -86,8 +90,8 @@ public class Ex2Sheet implements Sheet {
     }
 
     private String evaluateFormula(String formula) {
-        // Placeholder for formula evaluation logic.
-        return formula;
+           // Placeholder for formula evaluation logic.
+           return formula;
     }
 
     @Override
@@ -135,8 +139,46 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public void load(String fileName) throws IOException {
-        // Placeholder for load implementation.
-        // Clear existing data and load content from the file.
-        // Validate and parse each line as per the file format.
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            // Clear the existing table
+            table = new SCell[width()][height()];
+            for (int x = 0; x < width(); x++) {
+                for (int y = 0; y < height(); y++) {
+                    table[x][y] = new SCell(Ex2Utils.EMPTY_CELL);
+                }
+            }
+
+            // Validate the file header
+            String header = reader.readLine();
+            if (header == null || !header.equals("I2CS ArielU: SpreadSheet (Ex2) assignment")) {
+                throw new IOException("Invalid file format: Missing or incorrect header.");
+            }
+
+            // Read and parse each line
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length != 3) {
+                    throw new IOException("Invalid file format: Incorrect number of columns in line: " + line);
+                }
+
+                try {
+                    int x = Integer.parseInt(parts[0].trim());
+                    int y = Integer.parseInt(parts[1].trim());
+                    String data = parts[2].trim();
+
+                    if (isIn(x, y)) {
+                        table[x][y] = new SCell(data);
+                    } else {
+                        throw new IOException("Invalid cell coordinates in line: " + line);
+                    }
+                } catch (NumberFormatException e) {
+                    throw new IOException("Invalid cell coordinates format in line: " + line, e);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 }

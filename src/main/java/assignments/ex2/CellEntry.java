@@ -10,7 +10,7 @@ public class CellEntry implements Index2D {
     }
 
     public CellEntry(String cellIndex) {
-        if (cellIndex == null || cellIndex.length() < 2) {
+        if (cellIndex == null || cellIndex.length() != 2) {
             this.x = -1;
             this.y = -1;
         } else {
@@ -52,6 +52,6 @@ public class CellEntry implements Index2D {
         if (!isValid()) {
             return "Invalid Index";
         }
-        return (char) ('A' + x) + Integer.toString(y);
+        return (String) ((char) ('A' + x) + Integer.toString(y));
     }
 }
