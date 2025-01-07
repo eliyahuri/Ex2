@@ -39,11 +39,11 @@ public class SCell implements Cell {
     public void setData(String data) {
         this.data = data;
         if (data.startsWith("=")) {
-            this.type = Ex2Utils.FORM;
+            setType(Ex2Utils.FORM);
         } else if (isNumber(data)) {
-            this.type = Ex2Utils.NUMBER;
+            setType(Ex2Utils.NUMBER);
         } else {
-            this.type = Ex2Utils.TEXT;
+            setType(Ex2Utils.TEXT);
         }
     }
 
