@@ -5,6 +5,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Ex2Sheet implements Sheet {
     private Cell[][] table;
@@ -98,32 +102,34 @@ public class Ex2Sheet implements Sheet {
         formula = formula.substring(1); // Remove the '=' at the beginning
 
         try {
-            // Split the formula into tokens (operands and operators)
-            String[] tokens = formula.split(" ");
-            if (tokens.length % 2 == 0) {
+            // Use a regex to split numbers and operators into tokens
+            Pattern pattern = Pattern.compile("\\d+\\.?\\d*|[+\\-*/]");
+            Matcher matcher = pattern.matcher(formula);
+            List<String> tokens = new ArrayList<>();
+
+            while (matcher.find()) {
+                tokens.add(matcher.group());
+            }
+
+            if (tokens.size() % 2 == 0) {
                 // Formula must have an odd number of tokens (e.g., "1 + 2")
                 return Ex2Utils.ERR_FORM;
             }
 
             // First pass: handle multiplication and division
-            double[] values = new double[tokens.length];
-            String[] operators = new String[tokens.length];
+            double[] values = new double[tokens.size()];
+            String[] operators = new String[tokens.size()];
             int valueIndex = 0;
             int operatorIndex = 0;
 
-            double currentValue = getValue(tokens[0]);
-            for (int i = 1; i < tokens.length; i += 2) {
-                String operator = tokens[i];
-                if (i + 1 >= tokens.length) {
-                    // Missing operand after an operator
-                    return Ex2Utils.ERR_FORM;
-                }
-                double nextValue = getValue(tokens[i + 1]);
+            double currentValue = getValue(tokens.get(0));
+            for (int i = 1; i < tokens.size(); i += 2) {
+                String operator = tokens.get(i);
+                double nextValue = getValue(tokens.get(i + 1));
 
                 if (operator.equals("*") || operator.equals("/")) {
                     if (operator.equals("/") && nextValue == 0) {
-                        // Division by zero
-                        return Ex2Utils.ERR_FORM;
+                        return Ex2Utils.ERR_FORM; // Division by zero
                     }
                     currentValue = applyOperator(currentValue, nextValue, operator);
                 } else if (operator.equals("+") || operator.equals("-")) {
@@ -131,8 +137,7 @@ public class Ex2Sheet implements Sheet {
                     operators[operatorIndex++] = operator;
                     currentValue = nextValue;
                 } else {
-                    // Invalid operator
-                    return Ex2Utils.ERR_FORM;
+                    return Ex2Utils.ERR_FORM; // Invalid operator
                 }
             }
             values[valueIndex++] = currentValue;
