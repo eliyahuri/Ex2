@@ -74,8 +74,7 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public String value(int x, int y) {
-        Cell cell = get(x, y);
-        return cell != null ? cell.getData() : Ex2Utils.EMPTY_CELL;
+        return get(x,y).getData()!=null ? eval(x,y) : Ex2Utils.EMPTY_CELL;
     }
 
     @Override
@@ -84,14 +83,10 @@ public class Ex2Sheet implements Sheet {
         if (cell == null) {
             return Ex2Utils.EMPTY_CELL;
         }
-        String data = cell.getData();
-
-        return switch (cell.getType()) {
-            case Ex2Utils.FORM -> evaluateFormula(data);
-            case Ex2Utils.NUMBER -> data;
-            case Ex2Utils.TEXT -> data;
-            default -> Ex2Utils.ERR_FORM;
-        };
+        if (cell.getType() == Ex2Utils.FORM) {
+            return evaluateFormula(cell.getData());
+        }
+        return cell.getData();
     }
 
     public String evaluateFormula(String formula) {
@@ -183,8 +178,8 @@ public class Ex2Sheet implements Sheet {
     public void eval() {
         for (int x = 0; x < width(); x++) {
             for (int y = 0; y < height(); y++) {
-                String evaluatedValue = eval(x, y);
-                table[x][y] = new SCell(evaluatedValue);
+        
+                
             }
         }
     }
