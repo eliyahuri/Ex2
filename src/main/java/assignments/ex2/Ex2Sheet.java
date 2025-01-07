@@ -74,7 +74,7 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public String value(int x, int y) {
-        return get(x,y).getData()!=null ? eval(x,y) : Ex2Utils.EMPTY_CELL;
+        return get(x, y).getData() != null ? eval(x, y) : Ex2Utils.EMPTY_CELL;
     }
 
     @Override
@@ -178,8 +178,8 @@ public class Ex2Sheet implements Sheet {
     public void eval() {
         for (int x = 0; x < width(); x++) {
             for (int y = 0; y < height(); y++) {
-        
-                
+                eval(x, y);
+
             }
         }
     }
