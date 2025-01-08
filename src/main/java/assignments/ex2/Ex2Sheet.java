@@ -11,6 +11,10 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Implementation of a simple spreadsheet that supports basic operations like setting,
+ * retrieving, and evaluating cell values. Includes formula parsing and evaluation.
+ */
 public class Ex2Sheet implements Sheet {
     private Cell[][] table;
 
@@ -24,14 +28,14 @@ public class Ex2Sheet implements Sheet {
         table = new SCell[width][height];
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                table[x][y] = new SCell(Ex2Utils.EMPTY_CELL);
+                table[x][y] = new SCell(Ex2Utils.EMPTY_CELL); // Initialize each cell with an empty value
             }
         }
     }
 
     /**
-     * Default constructor that initializes the spreadsheet with predefined
-     * dimensions.
+     * Default constructor that initializes the spreadsheet with predefined dimensions.
+     * Dimensions are defined in Ex2Utils.WIDTH and Ex2Utils.HEIGHT.
      */
     public Ex2Sheet() {
         this(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
@@ -55,18 +59,18 @@ public class Ex2Sheet implements Sheet {
     @Override
     public void set(int x, int y, String data) {
         if (isIn(x, y)) {
-            table[x][y] = new SCell(data);
+            table[x][y] = new SCell(data); // Set the data in the specified cell
         }
     }
 
     @Override
     public Cell get(int x, int y) {
-        return isIn(x, y) ? table[x][y] : null;
+        return isIn(x, y) ? table[x][y] : null; // Return the cell or null if out of bounds
     }
 
     @Override
     public Cell get(String coords) {
-        CellEntry entry = new CellEntry(coords);
+        CellEntry entry = new CellEntry(coords); // Parse coordinates like "A1" into indices
         if (entry.isValid() && isIn(entry.getX(), entry.getY())) {
             return get(entry.getX(), entry.getY());
         }
@@ -75,7 +79,7 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public String value(int x, int y) {
-        return get(x, y).getData() != null ? eval(x, y) : Ex2Utils.EMPTY_CELL;
+        return get(x, y).getData() != null ? eval(x, y) : Ex2Utils.EMPTY_CELL; // Evaluate cell value if non-empty
     }
 
     @Override
@@ -84,21 +88,27 @@ public class Ex2Sheet implements Sheet {
         if (cell == null) {
             return Ex2Utils.EMPTY_CELL;
         }
-        if (cell.getType() == Ex2Utils.FORM) {
+        if (cell.getType() == Ex2Utils.FORM) { // If the cell contains a formula
             return evaluateFormula(cell.getData());
         }
         return cell.getData();
     }
 
+    /**
+     * Evaluate a formula string.
+     *
+     * @param formula the formula string to evaluate.
+     * @return the result of the formula or an error string if invalid.
+     */
     public String evaluateFormula(String formula) {
         if (formula == null || formula.isEmpty() || !formula.startsWith("=")) {
-            return Ex2Utils.ERR_FORM;
+            return Ex2Utils.ERR_FORM; // Return an error if not a valid formula
         }
 
         formula = formula.substring(1); // Remove the '=' at the beginning
 
         try {
-            // Convert the formula into postfix notation (Reverse Polish Notation) for easier evaluation
+            // Convert formula to postfix notation (Reverse Polish Notation)
             List<String> postfix = infixToPostfix(formula);
             // Evaluate the postfix expression
             return String.valueOf(evaluatePostfix(postfix));
@@ -107,6 +117,12 @@ public class Ex2Sheet implements Sheet {
         }
     }
 
+    /**
+     * Convert an infix formula to postfix notation for easier evaluation.
+     *
+     * @param formula the infix formula string.
+     * @return a list of tokens in postfix notation.
+     */
     private List<String> infixToPostfix(String formula) {
         List<String> postfix = new ArrayList<>();
         Stack<String> operators = new Stack<>();
@@ -146,6 +162,12 @@ public class Ex2Sheet implements Sheet {
         return postfix;
     }
 
+    /**
+     * Evaluate a postfix expression.
+     *
+     * @param postfix the list of tokens in postfix notation.
+     * @return the result of the evaluation.
+     */
     private double evaluatePostfix(List<String> postfix) {
         Stack<Double> values = new Stack<>();
 
@@ -207,8 +229,7 @@ public class Ex2Sheet implements Sheet {
     public void eval() {
         for (int x = 0; x < width(); x++) {
             for (int y = 0; y < height(); y++) {
-                eval(x, y);
-
+                eval(x, y); // Evaluate all cells
             }
         }
     }
@@ -218,7 +239,7 @@ public class Ex2Sheet implements Sheet {
         int[][] depths = new int[width()][height()];
         for (int x = 0; x < width(); x++) {
             for (int y = 0; y < height(); y++) {
-                depths[x][y] = computeDepth(x, y);
+                depths[x][y] = computeDepth(x, y); // Placeholder depth calculation
             }
         }
         return depths;
@@ -232,7 +253,7 @@ public class Ex2Sheet implements Sheet {
     @Override
     public void save(String fileName) throws IOException {
         try (Writer writer = new FileWriter(fileName)) {
-            writer.write("I2CS ArielU: SpreadSheet (Ex2) assignment\n");
+            writer.write("I2CS ArielU: SpreadSheet (Ex2) assignment\n"); // Write header
             for (int x = 0; x < width(); x++) {
                 for (int y = 0; y < height(); y++) {
                     Cell cell = get(x, y);
