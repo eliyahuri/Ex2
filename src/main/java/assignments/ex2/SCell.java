@@ -53,7 +53,7 @@ public class SCell implements Cell {
      * @param data the data to check.
      * @return true if the data is a valid number; false otherwise.
      */
-    private boolean isNumber(String data) {
+    public boolean isNumber(String data) {
         try {
             Double.valueOf(data);
             return true;
