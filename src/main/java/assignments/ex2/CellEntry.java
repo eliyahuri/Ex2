@@ -10,13 +10,20 @@ public class CellEntry implements Index2D {
     }
 
     public CellEntry(String cellIndex) {
-        if (cellIndex == null || cellIndex.length() != 2) {
+        if (cellIndex == null || cellIndex.isEmpty()) {
             this.x = -1;
             this.y = -1;
-        } else {
-            this.x = parseColumn(cellIndex);
-            this.y = parseRow(cellIndex);
+            return;
         }
+        int i = 0;
+        // Collect all letters for the column
+        while (i < cellIndex.length() && Character.isLetter(cellIndex.charAt(i))) {
+            i++;
+        }
+        String colPart = cellIndex.substring(0, i);
+        String rowPart = cellIndex.substring(i);
+        this.x = parseColumn(colPart);
+        this.y = parseRow(rowPart);
     }
 
     private int parseColumn(String cellIndex) {
