@@ -12,8 +12,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Implementation of a simple spreadsheet that supports basic operations like setting,
- * retrieving, and evaluating cell values. Includes formula parsing and evaluation.
+ * Implementation of a simple spreadsheet that supports basic operations like
+ * setting,
+ * retrieving, and evaluating cell values. Includes formula parsing and
+ * evaluation.
  */
 public class Ex2Sheet implements Sheet {
     private Cell[][] table;
@@ -34,7 +36,8 @@ public class Ex2Sheet implements Sheet {
     }
 
     /**
-     * Default constructor that initializes the spreadsheet with predefined dimensions.
+     * Default constructor that initializes the spreadsheet with predefined
+     * dimensions.
      * Dimensions are defined in Ex2Utils.WIDTH and Ex2Utils.HEIGHT.
      */
     public Ex2Sheet() {
@@ -88,7 +91,10 @@ public class Ex2Sheet implements Sheet {
         if (cell == null) {
             return Ex2Utils.EMPTY_CELL;
         }
-        if (cell.getType() == Ex2Utils.FORM) { // If the cell contains a formula
+        if (cell.getType() == Ex2Utils.ERR_CYCLE_FORM) {
+            return Ex2Utils.ERR_CYCLE; // Correctly handle cycle error
+        }
+        if (cell.getType() == Ex2Utils.FORM) {
             return evaluateFormula(cell.getData());
         }
         return cell.getData();
@@ -239,15 +245,40 @@ public class Ex2Sheet implements Sheet {
         int[][] depths = new int[width()][height()];
         for (int x = 0; x < width(); x++) {
             for (int y = 0; y < height(); y++) {
-                depths[x][y] = computeDepth(x, y); // Placeholder depth calculation
+                depths[x][y] = computeDepth(x, y, new boolean[width()][height()]); // Updated depth calculation
             }
         }
         return depths;
     }
 
-    private int computeDepth(int x, int y) {
-        // Placeholder for dependency depth calculation.
-        return 0;
+    private int computeDepth(int x, int y, boolean[][] visited) {
+        if (!isIn(x, y)) {
+            return Ex2Utils.ERR;
+        }
+        if (visited[x][y]) {
+            get(x, y).setType(Ex2Utils.ERR_CYCLE_FORM);
+            return Ex2Utils.ERR;
+        }
+        visited[x][y] = true;
+        Cell cell = get(x, y);
+        if (cell.getType() != Ex2Utils.FORM) {
+            return 0;
+        }
+        String formula = cell.getData().substring(1); // Remove '='
+        List<String> tokens = infixToPostfix(formula);
+        int maxDepth = 0;
+        for (String token : tokens) {
+            if (isCellReference(token)) {
+                CellEntry entry = new CellEntry(token);
+                int depth = computeDepth(entry.getX(), entry.getY(), visited);
+                if (depth == Ex2Utils.ERR) {
+                    return Ex2Utils.ERR;
+                }
+                maxDepth = Math.max(maxDepth, depth);
+            }
+        }
+        visited[x][y] = false;
+        return 1 + maxDepth;
     }
 
     @Override

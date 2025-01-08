@@ -154,7 +154,7 @@ public class Ex2SheetTest {
     public void testCircularDependencyDetection() {
         sheet.set(0, 0, "=B0");
         sheet.set(1, 0, "=A0");
-
+        sheet.eval();
         assertEquals(Ex2Utils.ERR_CYCLE, sheet.eval(0, 0));
     }
 
