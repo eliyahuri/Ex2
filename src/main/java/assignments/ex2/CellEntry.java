@@ -49,6 +49,7 @@ public class CellEntry implements Index2D {
 
     @Override
     public String toString() {
+        System.out.println((String) ((char) ('A' + x) + Integer.toString(y)));
         if (!isValid()) {
             return "Invalid Index";
         }

@@ -174,9 +174,9 @@ public class Ex2Sheet implements Sheet {
      * @param postfix the list of tokens in postfix notation.
      * @return the result of the evaluation.
      */
-     private double evaluatePostfix(List<String> postfix) {
+    private double evaluatePostfix(List<String> postfix) {
         Stack<Double> values = new Stack<>();
-    
+
         for (String token : postfix) {
             if (isNumber(token)) {
                 values.push(Double.parseDouble(token));
@@ -193,21 +193,22 @@ public class Ex2Sheet implements Sheet {
                 values.push(applyOperator(a, b, token));
             }
         }
-    
+
         if (values.size() != 1) {
             throw new IllegalArgumentException("Invalid postfix expression");
         }
-    
+
         return values.pop();
     }
-    
+
     private boolean isNumber(String token) {
         return token.matches("\\d+\\.?\\d*");
     }
-    
+
     private boolean isCellReference(String token) {
         return token.matches("[a-zA-Z]+\\d+");
     }
+
     private boolean isOperator(String token) {
         return "+-*/".contains(token);
     }
