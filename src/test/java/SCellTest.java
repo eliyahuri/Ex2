@@ -1,12 +1,11 @@
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import assignments.ex2.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-
-
+import assignments.ex2.Ex2Utils;
+import assignments.ex2.SCell;
 
 public class SCellTest {
 
@@ -19,9 +18,14 @@ public class SCellTest {
 
     @Test
     public void testConstructor() {
-        SCell cell = new SCell("initial");
+        cell = new SCell("initial");
         assertEquals("initial", cell.getData());
         assertEquals(Ex2Utils.TEXT, cell.getType());
+        cell = new SCell("123");
+        assertEquals("123", cell.getData());
+        assertEquals(Ex2Utils.NUMBER, cell.getType());
+        cell = new SCell("=1+2");
+        assertEquals(Ex2Utils.FORM, cell.getType());
     }
 
     @Test
