@@ -13,19 +13,13 @@ import java.util.regex.Pattern;
 
 /**
  * Implementation of a simple spreadsheet that supports basic operations like
- * setting,
- * retrieving, and evaluating cell values. Includes formula parsing and
+ * setting, retrieving, and evaluating cell values. Includes formula parsing and
  * evaluation.
  */
 public class Ex2Sheet implements Sheet {
     private Cell[][] table;
 
-    /**
-     * Constructor to initialize a spreadsheet with specified width and height.
-     *
-     * @param width  the number of columns in the spreadsheet.
-     * @param height the number of rows in the spreadsheet.
-     */
+    // Constructors
     public Ex2Sheet(int width, int height) {
         table = new SCell[width][height];
         for (int x = 0; x < width; x++) {
@@ -35,15 +29,11 @@ public class Ex2Sheet implements Sheet {
         }
     }
 
-    /**
-     * Default constructor that initializes the spreadsheet with predefined
-     * dimensions.
-     * Dimensions are defined in Ex2Utils.WIDTH and Ex2Utils.HEIGHT.
-     */
     public Ex2Sheet() {
         this(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
     }
 
+    // Basic operations
     @Override
     public boolean isIn(int x, int y) {
         return x >= 0 && x < table.length && y >= 0 && y < table[0].length;
@@ -100,12 +90,16 @@ public class Ex2Sheet implements Sheet {
         return cell.getData();
     }
 
-    /**
-     * Evaluate a formula string.
-     *
-     * @param formula the formula string to evaluate.
-     * @return the result of the formula or an error string if invalid.
-     */
+    @Override
+    public void eval() {
+        for (int x = 0; x < width(); x++) {
+            for (int y = 0; y < height(); y++) {
+                eval(x, y); // Evaluate all cells
+            }
+        }
+    }
+
+    // Formula evaluation
     public String evaluateFormula(String formula) {
         if (formula == null || formula.isEmpty() || !formula.startsWith("=")) {
             return Ex2Utils.ERR_FORM; // Return an error if not a valid formula
@@ -123,12 +117,6 @@ public class Ex2Sheet implements Sheet {
         }
     }
 
-    /**
-     * Convert an infix formula to postfix notation for easier evaluation.
-     *
-     * @param formula the infix formula string.
-     * @return a list of tokens in postfix notation.
-     */
     private List<String> infixToPostfix(String formula) {
         List<String> postfix = new ArrayList<>();
         Stack<String> operators = new Stack<>();
@@ -168,24 +156,30 @@ public class Ex2Sheet implements Sheet {
         return postfix;
     }
 
-    /**
-     * Evaluate a postfix expression.
-     *
-     * @param postfix the list of tokens in postfix notation.
-     * @return the result of the evaluation.
-     */
+    // ...existing code...
+
     private double evaluatePostfix(List<String> postfix) {
         Stack<Double> values = new Stack<>();
 
         for (String token : postfix) {
             if (isNumber(token)) {
-                values.push(Double.parseDouble(token));
+                values.push(Double.valueOf(token));
             } else if (isCellReference(token)) {
                 Cell cell = get(token);
-                if (cell != null && cell.getType() == Ex2Utils.NUMBER) {
-                    values.push(Double.parseDouble(cell.getData()));
+                if (cell != null) {
+                    if (cell.getType() == Ex2Utils.NUMBER) {
+                        values.push(Double.valueOf(cell.getData()));
+                    } else if (cell.getType() == Ex2Utils.FORM) {
+                        String evaluatedValue = evaluateFormula(cell.getData());
+                        if (evaluatedValue.equals(Ex2Utils.ERR_FORM)) {
+                            throw new IllegalArgumentException("Invalid formula in cell reference");
+                        }
+                        values.push(Double.valueOf(evaluatedValue));
+                    } else {
+                        throw new IllegalArgumentException("Invalid cell reference or non-numeric cell");
+                    }
                 } else {
-                    throw new IllegalArgumentException("Invalid cell reference or non-numeric cell");
+                    throw new IllegalArgumentException("Invalid cell reference");
                 }
             } else if (isOperator(token)) {
                 double b = values.pop();
@@ -201,12 +195,14 @@ public class Ex2Sheet implements Sheet {
         return values.pop();
     }
 
+    // ...existing code...
+
     private boolean isNumber(String token) {
         return token.matches("\\d+\\.?\\d*");
     }
 
     private boolean isCellReference(String token) {
-        return token.matches("[a-zA-Z]+\\d+");
+        return token.matches("[a-zA-Z]\\d+");
     }
 
     private boolean isOperator(String token) {
@@ -231,15 +227,7 @@ public class Ex2Sheet implements Sheet {
         };
     }
 
-    @Override
-    public void eval() {
-        for (int x = 0; x < width(); x++) {
-            for (int y = 0; y < height(); y++) {
-                eval(x, y); // Evaluate all cells
-            }
-        }
-    }
-
+    // Depth calculation
     @Override
     public int[][] depth() {
         int[][] depths = new int[width()][height()];
@@ -285,6 +273,7 @@ public class Ex2Sheet implements Sheet {
         return 1 + maxDepth;
     }
 
+    // File operations
     @Override
     public void save(String fileName) throws IOException {
         try (Writer writer = new FileWriter(fileName)) {

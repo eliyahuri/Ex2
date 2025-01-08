@@ -16,7 +16,6 @@ public class CellEntry implements Index2D {
             return;
         }
         int i = 0;
-        // Collect all letters for the column
         while (i < cellIndex.length() && Character.isLetter(cellIndex.charAt(i))) {
             i++;
         }
@@ -33,7 +32,7 @@ public class CellEntry implements Index2D {
 
     private int parseRow(String cellIndex) {
         try {
-            return Integer.parseInt(cellIndex.substring(1));
+            return Integer.parseInt(cellIndex);
         } catch (NumberFormatException e) {
             return -1;
         }
@@ -56,10 +55,9 @@ public class CellEntry implements Index2D {
 
     @Override
     public String toString() {
-        System.out.println((String) ((char) ('A' + x) + Integer.toString(y)));
         if (!isValid()) {
             return "Invalid Index";
         }
-        return (String) ((char) ('A' + x) + Integer.toString(y));
+        return (char) ('A' + x) + Integer.toString(y);
     }
 }
