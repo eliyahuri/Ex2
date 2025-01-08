@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -97,71 +98,99 @@ public class Ex2Sheet implements Sheet {
         formula = formula.substring(1); // Remove the '=' at the beginning
 
         try {
-            // Use a regex to split numbers and operators into tokens
-            Pattern pattern = Pattern.compile("\\d+\\.?\\d*|[+\\-*/]");
-            Matcher matcher = pattern.matcher(formula);
-            List<String> tokens = new ArrayList<>();
-
-            while (matcher.find()) {
-                tokens.add(matcher.group());
-            }
-
-            if (tokens.size() % 2 == 0) {
-                // Formula must have an odd number of tokens (e.g., "1 + 2")
-                return Ex2Utils.ERR_FORM;
-            }
-
-            // First pass: handle multiplication and division
-            double[] values = new double[tokens.size()];
-            String[] operators = new String[tokens.size()];
-            int valueIndex = 0;
-            int operatorIndex = 0;
-
-            double currentValue = getValue(tokens.get(0));
-            for (int i = 1; i < tokens.size(); i += 2) {
-                String operator = tokens.get(i);
-                double nextValue = getValue(tokens.get(i + 1));
-
-                if (operator.equals("*") || operator.equals("/")) {
-                    if (operator.equals("/") && nextValue == 0) {
-                        return Ex2Utils.ERR_FORM; // Division by zero
-                    }
-                    currentValue = applyOperator(currentValue, nextValue, operator);
-                } else if (operator.equals("+") || operator.equals("-")) {
-                    values[valueIndex++] = currentValue;
-                    operators[operatorIndex++] = operator;
-                    currentValue = nextValue;
-                } else {
-                    return Ex2Utils.ERR_FORM; // Invalid operator
-                }
-            }
-            values[valueIndex++] = currentValue;
-
-            // Second pass: handle addition and subtraction
-            double result = values[0];
-            for (int i = 0; i < operatorIndex; i++) {
-                result = applyOperator(result, values[i + 1], operators[i]);
-            }
-
-            return String.valueOf(result);
+            // Convert the formula into postfix notation (Reverse Polish Notation) for easier evaluation
+            List<String> postfix = infixToPostfix(formula);
+            // Evaluate the postfix expression
+            return String.valueOf(evaluatePostfix(postfix));
         } catch (Exception e) {
             return Ex2Utils.ERR_FORM;
         }
     }
 
-    private double getValue(String token) {
-        if (Character.isLetter(token.charAt(0))) {
-            // It's a cell reference
-            Cell cell = get(token);
-            if (cell != null && cell.getType() == Ex2Utils.NUMBER) {
-                return Double.parseDouble(cell.getData());
-            } else {
-                throw new IllegalArgumentException("Invalid cell reference or non-numeric cell");
+    private List<String> infixToPostfix(String formula) {
+        List<String> postfix = new ArrayList<>();
+        Stack<String> operators = new Stack<>();
+        Pattern pattern = Pattern.compile("\\d+\\.?\\d*|[a-zA-Z]+\\d+|[()+\\-*/]");
+        Matcher matcher = pattern.matcher(formula);
+
+        while (matcher.find()) {
+            String token = matcher.group();
+
+            if (isNumber(token) || isCellReference(token)) {
+                postfix.add(token);
+            } else if ("(".equals(token)) {
+                operators.push(token);
+            } else if (")".equals(token)) {
+                while (!operators.isEmpty() && !"(".equals(operators.peek())) {
+                    postfix.add(operators.pop());
+                }
+                if (operators.isEmpty() || !"(".equals(operators.pop())) {
+                    throw new IllegalArgumentException("Mismatched parentheses");
+                }
+            } else if (isOperator(token)) {
+                while (!operators.isEmpty() && precedence(operators.peek()) >= precedence(token)) {
+                    postfix.add(operators.pop());
+                }
+                operators.push(token);
             }
-        } else {
-            // It's a number
-            return Double.parseDouble(token);
         }
+
+        while (!operators.isEmpty()) {
+            String operator = operators.pop();
+            if ("(".equals(operator)) {
+                throw new IllegalArgumentException("Mismatched parentheses");
+            }
+            postfix.add(operator);
+        }
+
+        return postfix;
+    }
+
+    private double evaluatePostfix(List<String> postfix) {
+        Stack<Double> values = new Stack<>();
+
+        for (String token : postfix) {
+            if (isNumber(token)) {
+                values.push(Double.parseDouble(token));
+            } else if (isCellReference(token)) {
+                Cell cell = get(token);
+                if (cell != null && cell.getType() == Ex2Utils.NUMBER) {
+                    values.push(Double.parseDouble(cell.getData()));
+                } else {
+                    throw new IllegalArgumentException("Invalid cell reference or non-numeric cell");
+                }
+            } else if (isOperator(token)) {
+                double b = values.pop();
+                double a = values.pop();
+                values.push(applyOperator(a, b, token));
+            }
+        }
+
+        if (values.size() != 1) {
+            throw new IllegalArgumentException("Invalid postfix expression");
+        }
+
+        return values.pop();
+    }
+
+    private boolean isNumber(String token) {
+        return token.matches("\\d+\\.?\\d*");
+    }
+
+    private boolean isCellReference(String token) {
+        return token.matches("[a-zA-Z]+\\d+");
+    }
+
+    private boolean isOperator(String token) {
+        return "+-*/".contains(token);
+    }
+
+    private int precedence(String operator) {
+        return switch (operator) {
+            case "+", "-" -> 1;
+            case "*", "/" -> 2;
+            default -> -1;
+        };
     }
 
     private double applyOperator(double a, double b, String operator) {
