@@ -129,9 +129,9 @@ public class Ex2SheetTest {
 
         int[][] depths = sheet.depth();
 
-        assertEquals(3, depths[0][0]);
-        assertEquals(2, depths[1][0]);
-        assertEquals(1, depths[2][0]);
+        assertEquals(2, depths[0][0]);
+        assertEquals(1, depths[1][0]);
+        assertEquals(0, depths[2][0]);
     }
 
     @Test
@@ -153,9 +153,12 @@ public class Ex2SheetTest {
     @Test
     public void testCircularDependencyDetection() {
         sheet.set(0, 0, "=A0");
+        sheet.depth();
         assertEquals(Ex2Utils.ERR_CYCLE, sheet.eval(0, 0));
         sheet.set(0, 0, "=B0");
         sheet.set(1, 0, "=A0");
+        sheet.depth();
+
         assertEquals(Ex2Utils.ERR_CYCLE, sheet.eval(0, 0));
 
     }

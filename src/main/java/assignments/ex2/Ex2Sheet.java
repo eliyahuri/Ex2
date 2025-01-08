@@ -275,6 +275,10 @@ public class Ex2Sheet implements Sheet {
                     return Ex2Utils.ERR;
                 }
                 maxDepth = Math.max(maxDepth, depth);
+            } else if (isNumber(token)) {
+                // Handle numeric values
+                int depth = 0; // Numeric values have a depth of 0
+                maxDepth = Math.max(maxDepth, depth);
             }
         }
         visited[x][y] = false;
