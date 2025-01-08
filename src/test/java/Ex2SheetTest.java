@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,28 +64,23 @@ public class Ex2SheetTest {
 
     @Test
     public void testEvaluateFormula() {
-        // Basic arithmetic operations
         assertEquals("5.0", sheet.evaluateFormula("=2 + 3"));
         assertEquals("1.0", sheet.evaluateFormula("=3 - 2"));
         assertEquals("6.0", sheet.evaluateFormula("=2 * 3"));
         assertEquals("2.0", sheet.evaluateFormula("=6 / 3"));
 
-        // Multiple operations
         assertEquals("5.0", sheet.evaluateFormula("=2 + 3 * 5 / 5"));
         assertEquals("1.0", sheet.evaluateFormula("=10 / 2 - 4"));
 
-        // Cell references
         sheet.set(0, 0, "2");
         sheet.set(1, 0, "3");
         assertEquals("5.0", sheet.evaluateFormula("=A0 + B0"));
         assertEquals("6.0", sheet.evaluateFormula("=A0 * B0"));
 
-        // Invalid formulas
         assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=2 +"));
         assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=A1 +"));
         assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=A1 + B2"));
         assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=2 + 3 *"));
-
     }
 
     @Test
@@ -113,5 +109,65 @@ public class Ex2SheetTest {
         assertEquals("Test", loadedSheet.get(1, 1).getData());
 
         Files.delete(tempFile);
+    }
+
+    @Test
+    public void testClearCell() {
+        sheet.set(2, 2, "Test");
+        assertEquals("Test", sheet.get(2, 2).getData());
+
+        sheet.set(2, 2, Ex2Utils.EMPTY_CELL);
+
+        assertEquals(Ex2Utils.EMPTY_CELL, sheet.get(2, 2).getData());
+    }
+
+    @Test
+    public void testDependencyDepth() {
+        sheet.set(0, 0, "=B0 + 2");
+        sheet.set(1, 0, "=C0 + 1");
+        sheet.set(2, 0, "5");
+
+        int[][] depths = sheet.depth();
+
+        assertEquals(3, depths[0][0]);
+        assertEquals(2, depths[1][0]);
+        assertEquals(1, depths[2][0]);
+    }
+
+    @Test
+    public void testLoadInvalidFile() {
+        try {
+            Path tempFile = Files.createTempFile("invalid_sheet", ".txt");
+            Files.writeString(tempFile, "Invalid header\n1,2,Invalid data");
+
+            Ex2Sheet invalidSheet = new Ex2Sheet();
+            invalidSheet.load(tempFile.toString());
+
+            fail("Expected an IOException to be thrown");
+        } catch (IOException e) {
+            assertNotNull(e.getMessage());
+            assertTrue(e.getMessage().contains("Invalid file format"));
+        }
+    }
+
+    @Test
+    public void testCircularDependencyDetection() {
+        sheet.set(0, 0, "=B0");
+        sheet.set(1, 0, "=A0");
+
+        assertEquals(Ex2Utils.ERR_CYCLE, sheet.eval(0, 0));
+    }
+
+    @Test
+    public void testEvalWithInvalidCellReference() {
+        sheet.set(0, 0, "=Z9 + 2");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.eval(0, 0));
+    }
+
+    @Test
+    public void testEvalWithMixedReferences() {
+        sheet.set(0, 0, "5");
+        sheet.set(1, 0, "=A0 * 2");
+        assertEquals("10.0", sheet.eval(1, 0));
     }
 }
