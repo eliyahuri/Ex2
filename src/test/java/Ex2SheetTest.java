@@ -50,6 +50,35 @@ public class Ex2SheetTest {
     }
 
     @Test
+    public void testSetAndGetEdgeCases() {
+        // Setting and getting data at the boundaries
+        sheet.set(0, 0, "BoundaryTest");
+        assertEquals("BoundaryTest", sheet.get(0, 0).getData());
+
+        sheet.set(4, 4, "BoundaryTest");
+        assertEquals("BoundaryTest", sheet.get(4, 4).getData());
+
+        // Setting and getting data outside the boundaries
+        sheet.set(-1, -1, "OutOfBounds");
+        assertEquals(null, sheet.get(-1, -1));
+
+        sheet.set(5, 5, "OutOfBounds");
+        assertEquals(null, sheet.get(5, 5));
+    }
+
+    @Test
+    public void testSetAndGetWithEmptyString() {
+        sheet.set(2, 2, "");
+        assertEquals("", sheet.get(2, 2).getData());
+    }
+
+    @Test
+    public void testSetAndGetWithNull() {
+        sheet.set(2, 2, null);
+        assertEquals(Ex2Utils.EMPTY_CELL, sheet.get(2, 2).getData());
+    }
+
+    @Test
     public void testGetWithStringCoords() {
         sheet.set(1, 1, "Test");
         assertEquals("Test", sheet.get("B1").getData());
@@ -84,6 +113,16 @@ public class Ex2SheetTest {
     }
 
     @Test
+    public void testEvaluateFormulaEdgeCases() {
+        // Invalid formulas
+        assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=2 +"));
+        assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=A1 +"));
+        assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=A1 + B2"));
+        assertEquals(Ex2Utils.ERR_FORM, sheet.evaluateFormula("=2 + 3 *"));
+
+    }
+
+    @Test
     public void testEvalEntireSheet() {
         sheet.set(1, 1, "123");
         sheet.eval();
@@ -99,6 +138,27 @@ public class Ex2SheetTest {
     }
 
     @Test
+    public void testDepthEdgeCases() {
+        // Depth with no dependencies
+        int[][] depths = sheet.depth();
+        for (int x = 0; x < sheet.width(); x++) {
+            for (int y = 0; y < sheet.height(); y++) {
+                assertEquals(0, depths[x][y]);
+            }
+        }
+
+        // Depth with circular dependencies
+        sheet.set(0, 0, "=A0");
+        depths = sheet.depth();
+        assertEquals(Ex2Utils.ERR, depths[0][0]);
+
+        sheet.set(0, 0, "=B0");
+        sheet.set(1, 0, "=A0");
+        depths = sheet.depth();
+
+    }
+
+    @Test
     public void testSaveAndLoad() throws IOException {
         sheet.set(1, 1, "Test");
         Path tempFile = Files.createTempFile("sheet", ".txt");
@@ -107,6 +167,30 @@ public class Ex2SheetTest {
         Ex2Sheet loadedSheet = new Ex2Sheet(5, 5);
         loadedSheet.load(tempFile.toString());
         assertEquals("Test", loadedSheet.get(1, 1).getData());
+
+        Files.delete(tempFile);
+    }
+
+    @Test
+    public void testSaveAndLoadEdgeCases() throws IOException {
+        // Save and load with empty cells
+        Path tempFile = Files.createTempFile("empty_sheet", ".txt");
+        sheet.save(tempFile.toString());
+
+        Ex2Sheet loadedSheet = new Ex2Sheet(5, 5);
+        loadedSheet.load(tempFile.toString());
+        assertEquals(Ex2Utils.EMPTY_CELL, loadedSheet.get(1, 1).getData());
+
+        Files.delete(tempFile);
+
+        // Save and load with special characters
+        sheet.set(1, 1, "SpecialChars!@#$%^&*()");
+        tempFile = Files.createTempFile("special_chars_sheet", ".txt");
+        sheet.save(tempFile.toString());
+
+        loadedSheet = new Ex2Sheet(5, 5);
+        loadedSheet.load(tempFile.toString());
+        assertEquals("SpecialChars!@#$%^&*()", loadedSheet.get(1, 1).getData());
 
         Files.delete(tempFile);
     }

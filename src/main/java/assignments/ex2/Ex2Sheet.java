@@ -60,7 +60,11 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public void set(int x, int y, String data) {
+
         if (isIn(x, y)) {
+            if (data == null) {
+                data = Ex2Utils.EMPTY_CELL;
+            }
             table[x][y] = new SCell(data); // Set the data in the specified cell
         }
     }
