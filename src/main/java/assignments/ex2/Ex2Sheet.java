@@ -20,6 +20,12 @@ public class Ex2Sheet implements Sheet {
     private Cell[][] table;
 
     // Constructors
+    /**
+     * Constructs a new Ex2Sheet with the specified width and height.
+     * 
+     * @param width  the width of the spreadsheet
+     * @param height the height of the spreadsheet
+     */
     public Ex2Sheet(int width, int height) {
         table = new SCell[width][height];
         for (int x = 0; x < width; x++) {
@@ -29,6 +35,9 @@ public class Ex2Sheet implements Sheet {
         }
     }
 
+    /**
+     * Constructs a new Ex2Sheet with default width and height.
+     */
     public Ex2Sheet() {
         this(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
     }
@@ -100,6 +109,12 @@ public class Ex2Sheet implements Sheet {
     }
 
     // Formula evaluation
+    /**
+     * Evaluates a formula and returns the result as a string.
+     * 
+     * @param formula the formula to evaluate
+     * @return the result of the formula evaluation
+     */
     public String evaluateFormula(String formula) {
         if (formula == null || formula.isEmpty() || !formula.startsWith("=")) {
             return Ex2Utils.ERR_FORM; // Return an error if not a valid formula
@@ -117,6 +132,12 @@ public class Ex2Sheet implements Sheet {
         }
     }
 
+    /**
+     * Converts an infix formula to postfix notation (Reverse Polish Notation).
+     * 
+     * @param formula the infix formula
+     * @return the postfix notation as a list of strings
+     */
     private List<String> infixToPostfix(String formula) {
         List<String> postfix = new ArrayList<>();
         Stack<String> operators = new Stack<>();
@@ -156,8 +177,12 @@ public class Ex2Sheet implements Sheet {
         return postfix;
     }
 
-    // ...existing code...
-
+    /**
+     * Evaluates a postfix expression and returns the result.
+     * 
+     * @param postfix the postfix expression as a list of strings
+     * @return the result of the evaluation
+     */
     private double evaluatePostfix(List<String> postfix) {
         Stack<Double> values = new Stack<>();
 
@@ -195,20 +220,42 @@ public class Ex2Sheet implements Sheet {
         return values.pop();
     }
 
-    // ...existing code...
-
+    /**
+     * Checks if a token is a number.
+     * 
+     * @param token the token to check
+     * @return true if the token is a number, false otherwise
+     */
     private boolean isNumber(String token) {
         return token.matches("\\d+\\.?\\d*");
     }
 
+    /**
+     * Checks if a token is a cell reference.
+     * 
+     * @param token the token to check
+     * @return true if the token is a cell reference, false otherwise
+     */
     private boolean isCellReference(String token) {
         return token.matches("[a-zA-Z]\\d+");
     }
 
+    /**
+     * Checks if a token is an operator.
+     * 
+     * @param token the token to check
+     * @return true if the token is an operator, false otherwise
+     */
     private boolean isOperator(String token) {
         return "+-*/".contains(token);
     }
 
+    /**
+     * Returns the precedence of an operator.
+     * 
+     * @param operator the operator
+     * @return the precedence of the operator
+     */
     private int precedence(String operator) {
         return switch (operator) {
             case "+", "-" -> 1;
@@ -217,6 +264,14 @@ public class Ex2Sheet implements Sheet {
         };
     }
 
+    /**
+     * Applies an operator to two operands and returns the result.
+     * 
+     * @param a        the first operand
+     * @param b        the second operand
+     * @param operator the operator
+     * @return the result of applying the operator
+     */
     private double applyOperator(double a, double b, String operator) {
         return switch (operator) {
             case "+" -> a + b;
@@ -239,6 +294,14 @@ public class Ex2Sheet implements Sheet {
         return depths;
     }
 
+    /**
+     * Computes the depth of a cell.
+     * 
+     * @param x       the x-coordinate of the cell
+     * @param y       the y-coordinate of the cell
+     * @param visited a boolean array to track visited cells
+     * @return the depth of the cell
+     */
     private int computeDepth(int x, int y, boolean[][] visited) {
         if (!isIn(x, y)) {
             return Ex2Utils.ERR;
