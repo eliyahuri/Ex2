@@ -51,6 +51,12 @@ public class SCell implements Cell {
         this.order = order;
     }
 
+    /**
+     * Checks if the provided data is a number.
+     *
+     * @param data the data to check
+     * @return true if the data is a number, false otherwise
+     */
     public boolean isNumber(String data) {
         try {
             Double.valueOf(data);
