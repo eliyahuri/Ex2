@@ -24,7 +24,10 @@ sheet.set(1, 0, "=A0 + 1");     // The answer to everything plus one
 sheet.set(2, 0, "=B0 * 2");     // Now we're just showing off
 ```
 ## The Great IDE Migration 🏃
-After a dramatic breakup with IntelliJ (JUnit kept ghosting me), I found true happiness with VS Code + Maven. It's like when you finally switch from writing formulas on a napkin to using an actual calculator. Now my tests run smoother than a spreadsheet's bottom row.
+After a dramatic breakup with IntelliJ (JUnit kept ghosting me), I found true happiness with VS Code + Maven. It's like when you finally switch from writing formulas on napkins to using an actual calculator. Now my tests run smoother than a spreadsheet's bottom row.
+
+![VS Code vs IntelliJ](https://th.bing.com/th/id/R.f4b70726deaf55a7918bffb1058de3cb?rik=2ltuBY9TaeUTlA&pid=ImgRaw&r=0)
+*Plot twist: The Java full-stack developers have spoken - VS Code is the new cool kid in town! 😎*
 
 ## Known Features That Are Actually Bugs 🐛
 Sometimes cells play hide and seek with their values
