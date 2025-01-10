@@ -211,8 +211,14 @@ public class Ex2Sheet implements Sheet {
                     throw new IllegalArgumentException("Invalid cell reference");
                 }
             } else if (isOperator(token)) {
+                if (values.isEmpty()) {
+                    throw new IllegalArgumentException("Invalid postfix expression");
+                }
                 double b = values.pop();
-                double a = values.isEmpty() ? 0 : values.pop();
+                if (values.isEmpty()) {
+                    throw new IllegalArgumentException("Invalid postfix expression");
+                }
+                double a = values.pop();
                 values.push(applyOperator(a, b, token));
             }
         }

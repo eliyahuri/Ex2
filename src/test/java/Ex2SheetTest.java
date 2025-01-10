@@ -152,10 +152,6 @@ public class Ex2SheetTest {
         depths = sheet.depth();
         assertEquals(Ex2Utils.ERR, depths[0][0]);
 
-        sheet.set(0, 0, "=B0");
-        sheet.set(1, 0, "=A0");
-        depths = sheet.depth();
-
     }
 
     @Test
