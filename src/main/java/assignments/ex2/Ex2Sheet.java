@@ -212,7 +212,7 @@ public class Ex2Sheet implements Sheet {
                 }
             } else if (isOperator(token)) {
                 double b = values.pop();
-                double a = values.pop();
+                double a = values.isEmpty() ? 0 : values.pop();
                 values.push(applyOperator(a, b, token));
             }
         }

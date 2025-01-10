@@ -259,4 +259,28 @@ public class Ex2SheetTest {
         sheet.set(1, 0, "=A0 * 2");
         assertEquals("10.0", sheet.eval(1, 0));
     }
+
+    @Test
+    public void testNegativeNumbersAndReferences() {
+        // Test direct negative numbers
+        sheet.set(0, 0, "-42");
+        assertEquals("-42", sheet.value(0, 0));
+
+        // Test negative numbers in formulas
+        sheet.set(1, 0, "=-13");
+        assertEquals("-13.0", sheet.eval(1, 0));
+
+        // Test negative cell references
+        sheet.set(0, 0, "10");
+        sheet.set(1, 0, "=-A0");
+        assertEquals("-10.0", sheet.eval(1, 0));
+
+        // Test complex formulas with negatives
+        sheet.set(2, 0, "=-A0 + 5");
+        assertEquals("-5.0", sheet.eval(2, 0));
+
+        // Test multiple negatives
+        sheet.set(3, 0, "=-(-A0)");
+        assertEquals("10.0", sheet.eval(3, 0));
+    }
 }
