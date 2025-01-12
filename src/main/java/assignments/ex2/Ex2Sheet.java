@@ -145,37 +145,49 @@ public class Ex2Sheet implements Sheet {
     private List<String> infixToPostfix(String formula) {
         List<String> postfix = new ArrayList<>();
         Stack<String> operators = new Stack<>();
-        Pattern pattern = Pattern.compile("\\d+\\.?\\d*|[a-zA-Z]+\\d+|[()+\\-*/]");
+        Pattern pattern = Pattern.compile("-?\\d+\\.?\\d*|[a-zA-Z]+\\d+|[()+\\-*/]");
         Matcher matcher = pattern.matcher(formula);
+        boolean expectOperand = true; // Track if we expect an operand next
 
         while (matcher.find()) {
             String token = matcher.group();
 
-            if (isNumber(token) || isCellReference(token)) {
+            if (token.equals("-") && expectOperand) {
+                // Handle unary minus by converting to special token
+                token = "u-";
+            }
+
+            if (isNumber(token)) {
                 postfix.add(token);
+                expectOperand = false;
+            } else if (isCellReference(token)) {
+                postfix.add(token);
+                expectOperand = false;
             } else if ("(".equals(token)) {
                 operators.push(token);
+                expectOperand = true;
             } else if (")".equals(token)) {
                 while (!operators.isEmpty() && !"(".equals(operators.peek())) {
                     postfix.add(operators.pop());
                 }
-                if (operators.isEmpty() || !"(".equals(operators.pop())) {
-                    throw new IllegalArgumentException("Mismatched parentheses");
+                if (!operators.isEmpty()) {
+                    operators.pop(); // Remove "("
                 }
-            } else if (isOperator(token)) {
+                expectOperand = false;
+            } else if (isOperator(token) || token.equals("u-")) {
                 while (!operators.isEmpty() && precedence(operators.peek()) >= precedence(token)) {
                     postfix.add(operators.pop());
                 }
                 operators.push(token);
+                expectOperand = true;
             }
         }
 
         while (!operators.isEmpty()) {
             String operator = operators.pop();
-            if ("(".equals(operator)) {
-                throw new IllegalArgumentException("Mismatched parentheses");
+            if (!"(".equals(operator)) {
+                postfix.add(operator);
             }
-            postfix.add(operator);
         }
 
         return postfix;
@@ -196,37 +208,28 @@ public class Ex2Sheet implements Sheet {
             } else if (isCellReference(token)) {
                 Cell cell = get(token);
                 if (cell != null) {
-                    if (cell.getType() == Ex2Utils.NUMBER) {
-                        values.push(Double.valueOf(cell.getData()));
-                    } else if (cell.getType() == Ex2Utils.FORM) {
-                        String evaluatedValue = evaluateFormula(cell.getData());
-                        if (evaluatedValue.equals(Ex2Utils.ERR_FORM)) {
-                            throw new IllegalArgumentException("Invalid formula in cell reference");
-                        }
-                        values.push(Double.valueOf(evaluatedValue));
-                    } else {
-                        throw new IllegalArgumentException("Invalid cell reference or non-numeric cell");
-                    }
-                } else {
-                    throw new IllegalArgumentException("Invalid cell reference");
+                    String cellValue = eval(new CellEntry(token).getX(), new CellEntry(token).getY());
+                    values.push(Double.valueOf(cellValue));
                 }
-            } else if (isOperator(token)) {
+            } else if (token.equals("u-")) {
                 if (values.isEmpty()) {
-                    throw new IllegalArgumentException("Invalid postfix expression");
+                    throw new IllegalArgumentException("Invalid expression");
+                }
+                double val = values.pop();
+                values.push(-val);
+            } else if (isOperator(token)) {
+                if (values.size() < 2) {
+                    throw new IllegalArgumentException("Invalid expression");
                 }
                 double b = values.pop();
-                if (values.isEmpty()) {
-                    throw new IllegalArgumentException("Invalid postfix expression");
-                }
                 double a = values.pop();
                 values.push(applyOperator(a, b, token));
             }
         }
 
         if (values.size() != 1) {
-            throw new IllegalArgumentException("Invalid postfix expression");
+            throw new IllegalArgumentException("Invalid expression");
         }
-
         return values.pop();
     }
 
@@ -257,7 +260,7 @@ public class Ex2Sheet implements Sheet {
      * @return true if the token is an operator, false otherwise
      */
     private boolean isOperator(String token) {
-        return "+-*/".contains(token);
+        return "+-*/".contains(token) || token.equals("u-");
     }
 
     /**
@@ -270,6 +273,7 @@ public class Ex2Sheet implements Sheet {
         return switch (operator) {
             case "+", "-" -> 1;
             case "*", "/" -> 2;
+            case "u-" -> 3;
             default -> -1;
         };
     }
