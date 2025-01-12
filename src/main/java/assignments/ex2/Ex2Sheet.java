@@ -364,8 +364,7 @@ public class Ex2Sheet implements Sheet {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            throw e;
+            throw new IOException("Failed to save spreadsheet to file: " + fileName, e);
         }
     }
 
@@ -409,8 +408,7 @@ public class Ex2Sheet implements Sheet {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            throw e;
+            throw new IOException("Failed to load spreadsheet from file: " + fileName, e);
         }
     }
 }
