@@ -49,11 +49,51 @@ public class SCellTest {
     }
 
     @Test
+    public void testSetDataEdgeCases() {
+        // Test setting data to null
+        cell.setData(null);
+        assertEquals(Ex2Utils.EMPTY_CELL, cell.getData());
+        assertEquals(Ex2Utils.TEXT, cell.getType());
+
+        // Test setting data to an empty string
+        cell.setData("");
+        assertEquals("", cell.getData());
+        assertEquals(Ex2Utils.TEXT, cell.getType());
+
+        // Test setting data to a very large number
+        String largeNumber = "12345678901234567890";
+        cell.setData(largeNumber);
+        assertEquals(largeNumber, cell.getData());
+        assertEquals(Ex2Utils.NUMBER, cell.getType());
+
+        // Test setting data to a complex formula
+        String complexFormula = "=SUM(A1:B2) + 3 * (4 - 2)";
+        cell.setData(complexFormula);
+        assertEquals(complexFormula, cell.getData());
+        assertEquals(Ex2Utils.FORM, cell.getType());
+    }
+
+    @Test
     public void testIsNumber() {
         assertTrue(cell.isNumber("123"));
         assertTrue(cell.isNumber("123.45"));
         assertFalse(cell.isNumber("text"));
         assertFalse(cell.isNumber("=SUM(A1:B2)"));
+    }
+
+    @Test
+    public void testIsNumberEdgeCases() {
+        // Test with negative numbers
+        assertTrue(cell.isNumber("-123"));
+        assertTrue(cell.isNumber("-123.45"));
+
+        // Test with numbers in scientific notation
+        assertTrue(cell.isNumber("1.23e10"));
+        assertTrue(cell.isNumber("-1.23e-10"));
+
+        // Test with invalid number formats
+        assertFalse(cell.isNumber("123abc"));
+        assertFalse(cell.isNumber("1.23.45"));
     }
 
     @Test
@@ -68,6 +108,17 @@ public class SCellTest {
     }
 
     @Test
+    public void testSetTypeEdgeCases() {
+        // Test setting type to an invalid value
+        cell.setType(-1);
+        assertEquals(-1, cell.getType());
+
+        // Test setting type to a very large value
+        cell.setType(Integer.MAX_VALUE);
+        assertEquals(Integer.MAX_VALUE, cell.getType());
+    }
+
+    @Test
     public void testGetOrder() {
         cell.setOrder(1);
         assertEquals(1, cell.getOrder());
@@ -77,5 +128,16 @@ public class SCellTest {
     public void testSetOrder() {
         cell.setOrder(2);
         assertEquals(2, cell.getOrder());
+    }
+
+    @Test
+    public void testSetOrderEdgeCases() {
+        // Test setting order to a negative value
+        cell.setOrder(-1);
+        assertEquals(-1, cell.getOrder());
+
+        // Test setting order to a very large value
+        cell.setOrder(Integer.MAX_VALUE);
+        assertEquals(Integer.MAX_VALUE, cell.getOrder());
     }
 }

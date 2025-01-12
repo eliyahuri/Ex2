@@ -21,6 +21,9 @@ public class SCell implements Cell {
 
     @Override
     public void setData(String data) {
+        if (data == null) {
+            data = Ex2Utils.EMPTY_CELL;
+        }
         this.data = data;
         if (data.startsWith("=")) {
             setType(Ex2Utils.FORM);
