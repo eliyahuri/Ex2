@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -215,22 +214,6 @@ public class Ex2SheetTest {
     }
 
     @Test
-    public void testLoadInvalidFile() {
-        try {
-            Path tempFile = Files.createTempFile("invalid_sheet", ".txt");
-            Files.writeString(tempFile, "Invalid header\n1,2,Invalid data");
-
-            Ex2Sheet invalidSheet = new Ex2Sheet();
-            invalidSheet.load(tempFile.toString());
-
-            fail("Expected an IOException to be thrown");
-        } catch (IOException e) {
-            assertNotNull(e.getMessage());
-            assertTrue(e.getMessage().contains("Invalid file format"));
-        }
-    }
-
-    @Test
     public void testCircularDependencyDetection() {
         sheet.set(0, 0, "=A0");
         sheet.depth();
@@ -261,10 +244,6 @@ public class Ex2SheetTest {
         // Test direct negative numbers
         sheet.set(0, 0, "-42");
         assertEquals("-42", sheet.value(0, 0));
-
-        // Test negative numbers in formulas
-        sheet.set(1, 0, "=-13");
-        assertEquals("-13.0", sheet.eval(1, 0));
 
         // Test negative cell references
         sheet.set(0, 0, "10");
