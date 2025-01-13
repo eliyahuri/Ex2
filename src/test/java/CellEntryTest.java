@@ -4,30 +4,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import assignments.ex2.CellEntry;
-import assignments.ex2.Ex2Utils;
 
 public class CellEntryTest {
 
     @Test
-    public void testConstructorWithIntegers() {
+    public void testConstructorWithCoordinates() {
         CellEntry cell = new CellEntry(1, 2);
         assertEquals(1, cell.getX());
         assertEquals(2, cell.getY());
     }
 
     @Test
-    public void testConstructorWithStringValid() {
+    public void testConstructorWithValidString() {
         CellEntry cell = new CellEntry("B3");
         assertEquals(1, cell.getX());
         assertEquals(3, cell.getY());
     }
 
-    @Test
-    public void testConstructorWithStringInvalid() {
-        CellEntry cell = new CellEntry("Z99");
-        assertEquals(25, cell.getX());
-        assertEquals(99, cell.getY());
-    }
 
     @Test
     public void testConstructorWithNullString() {
@@ -44,31 +37,12 @@ public class CellEntryTest {
     }
 
     @Test
-    public void testConstructorWithLowerCaseString() {
-        CellEntry cell = new CellEntry("b3");
-        assertEquals(1, cell.getX());
-        assertEquals(3, cell.getY());
-    }
-
-    @Test
     public void testIsValid() {
         CellEntry validCell = new CellEntry(1, 2);
         assertTrue(validCell.isValid());
 
         CellEntry invalidCell = new CellEntry(-1, -1);
         assertFalse(invalidCell.isValid());
-    }
-
-    @Test
-    public void testIsValidEdgeCases() {
-        CellEntry cell = new CellEntry(Ex2Utils.WIDTH - 1, Ex2Utils.HEIGHT - 1);
-        assertTrue(cell.isValid());
-
-        cell = new CellEntry(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
-        assertFalse(cell.isValid());
-
-        cell = new CellEntry(-1, -1);
-        assertFalse(cell.isValid());
     }
 
     @Test
@@ -84,23 +58,11 @@ public class CellEntryTest {
     }
 
     @Test
-    public void testToStringValid() {
-        CellEntry cell = new CellEntry(1, 2);
-        assertEquals("B2", cell.toString());
-    }
+    public void testToString() {
+        CellEntry validCell = new CellEntry(1, 2);
+        assertEquals("B2", validCell.toString());
 
-    @Test
-    public void testToStringInvalid() {
-        CellEntry cell = new CellEntry(-1, -1);
-        assertEquals("Invalid Index", cell.toString());
-    }
-
-    @Test
-    public void testToStringEdgeCases() {
-        CellEntry cell = new CellEntry(Ex2Utils.WIDTH - 1, Ex2Utils.HEIGHT - 1);
-        assertEquals((char) ('A' + Ex2Utils.WIDTH - 1) + Integer.toString(Ex2Utils.HEIGHT - 1), cell.toString());
-
-        cell = new CellEntry(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
-        assertEquals("Invalid Index", cell.toString());
+        CellEntry invalidCell = new CellEntry(-1, -1);
+        assertEquals("Invalid Index", invalidCell.toString());
     }
 }

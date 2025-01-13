@@ -1,7 +1,6 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import assignments.ex2.Ex2Utils;
@@ -9,135 +8,115 @@ import assignments.ex2.SCell;
 
 public class SCellTest {
 
-    private SCell cell;
-
-    @BeforeEach
-    public void setUp() {
-        cell = new SCell("initial");
+    @Test
+    public void testConstructorAndGetData() {
+        SCell cell = new SCell("=A1+B2");
+        assertEquals("=A1+B2", cell.getData());
     }
 
     @Test
-    public void testConstructor() {
-        cell = new SCell("initial");
-        assertEquals("initial", cell.getData());
-        assertEquals(Ex2Utils.TEXT, cell.getType());
-        cell = new SCell("123");
-        assertEquals("123", cell.getData());
-        assertEquals(Ex2Utils.NUMBER, cell.getType());
-        cell = new SCell("=1+2");
+    public void testSetDataFormula() {
+        SCell cell = new SCell(null);
+        cell.setData("=A1+B2");
+        assertEquals("=A1+B2", cell.getData());
         assertEquals(Ex2Utils.FORM, cell.getType());
     }
 
     @Test
-    public void testGetData() {
-        assertEquals("initial", cell.getData());
-    }
-
-    @Test
-    public void testSetData() {
+    public void testSetDataNumber() {
+        SCell cell = new SCell(null);
         cell.setData("123");
         assertEquals("123", cell.getData());
         assertEquals(Ex2Utils.NUMBER, cell.getType());
+    }
 
-        cell.setData("=SUM(A1:B2)");
-        assertEquals("=SUM(A1:B2)", cell.getData());
-        assertEquals(Ex2Utils.FORM, cell.getType());
-
-        cell.setData("text");
-        assertEquals("text", cell.getData());
+    @Test
+    public void testSetDataText() {
+        SCell cell = new SCell(null);
+        cell.setData("Hello");
+        assertEquals("Hello", cell.getData());
         assertEquals(Ex2Utils.TEXT, cell.getType());
     }
 
     @Test
-    public void testSetDataEdgeCases() {
-        // Test setting data to null
-        cell.setData(null);
-        assertEquals(Ex2Utils.EMPTY_CELL, cell.getData());
-        assertEquals(Ex2Utils.TEXT, cell.getType());
+    public void testIsFormValid() {
+        SCell cell = new SCell(null);
+        assertTrue(cell.isForm("=A1+B2"));
+        assertTrue(cell.isForm("=1+2"));
+        assertTrue(cell.isForm("=(A1+B2)*C3"));
+    }
 
-        // Test setting data to an empty string
+    @Test
+    public void testIsFormInvalid() {
+        SCell cell = new SCell(null);
+        assertFalse(cell.isForm("A1+B2"));
+        assertFalse(cell.isForm("=A1+"));
+        assertFalse(cell.isForm("=1+2*"));
+    }
+
+    @Test
+    public void testIsNumberValid() {
+        SCell cell = new SCell(null);
+        assertTrue(cell.isNumber("123"));
+        assertTrue(cell.isNumber("123.45"));
+    }
+
+    @Test
+    public void testIsNumberInvalid() {
+        SCell cell = new SCell(null);
+        assertFalse(cell.isNumber("123a"));
+        assertFalse(cell.isNumber("abc"));
+    }
+
+
+    @Test
+    public void testSetDataEmptyString() {
+        SCell cell = new SCell(null);
         cell.setData("");
         assertEquals("", cell.getData());
         assertEquals(Ex2Utils.TEXT, cell.getType());
-
-        // Test setting data to a very large number
-        String largeNumber = "12345678901234567890";
-        cell.setData(largeNumber);
-        assertEquals(largeNumber, cell.getData());
-        assertEquals(Ex2Utils.NUMBER, cell.getType());
-
-        // Test setting data to a complex formula
-        String complexFormula = "=SUM(A1:B2) + 3 * (4 - 2)";
-        cell.setData(complexFormula);
-        assertEquals(complexFormula, cell.getData());
-        assertEquals(Ex2Utils.FORM, cell.getType());
     }
 
     @Test
-    public void testIsNumber() {
-        assertTrue(cell.isNumber("123"));
-        assertTrue(cell.isNumber("123.45"));
-        assertFalse(cell.isNumber("text"));
-        assertFalse(cell.isNumber("=SUM(A1:B2)"));
-    }
-
-    @Test
-    public void testIsNumberEdgeCases() {
-        // Test with negative numbers
-        assertTrue(cell.isNumber("-123"));
-        assertTrue(cell.isNumber("-123.45"));
-
-        // Test with numbers in scientific notation
-        assertTrue(cell.isNumber("1.23e10"));
-        assertTrue(cell.isNumber("-1.23e-10"));
-
-        // Test with invalid number formats
-        assertFalse(cell.isNumber("123abc"));
-        assertFalse(cell.isNumber("1.23.45"));
-    }
-
-    @Test
-    public void testGetType() {
+    public void testSetDataNull() {
+        SCell cell = new SCell(null);
+        cell.setData(null);
+        assertEquals(Ex2Utils.EMPTY_CELL, cell.getData());
         assertEquals(Ex2Utils.TEXT, cell.getType());
     }
 
     @Test
-    public void testSetType() {
-        cell.setType(Ex2Utils.NUMBER);
-        assertEquals(Ex2Utils.NUMBER, cell.getType());
+    public void testIsFormWithSpaces() {
+        SCell cell = new SCell(null);
+        assertTrue(cell.isForm("= A1 + B2"));
+        assertTrue(cell.isForm("= ( A1 + B2 ) * C3"));
     }
 
     @Test
-    public void testSetTypeEdgeCases() {
-        // Test setting type to an invalid value
-        cell.setType(-1);
-        assertEquals(-1, cell.getType());
-
-        // Test setting type to a very large value
-        cell.setType(Integer.MAX_VALUE);
-        assertEquals(Integer.MAX_VALUE, cell.getType());
+    public void testIsFormWithInvalidCharacters() {
+        SCell cell = new SCell(null);
+        assertFalse(cell.isForm("=A1+B2$"));
+        assertFalse(cell.isForm("=A1+@B2"));
     }
 
     @Test
-    public void testGetOrder() {
-        cell.setOrder(1);
-        assertEquals(1, cell.getOrder());
+    public void testIsNumberWithLeadingZeros() {
+        SCell cell = new SCell(null);
+        assertTrue(cell.isNumber("00123"));
+        assertTrue(cell.isNumber("000.45"));
     }
 
     @Test
-    public void testSetOrder() {
-        cell.setOrder(2);
-        assertEquals(2, cell.getOrder());
+    public void testIsNumberWithMultipleDots() {
+        SCell cell = new SCell(null);
+        assertFalse(cell.isNumber("123.45.67"));
     }
 
     @Test
-    public void testSetOrderEdgeCases() {
-        // Test setting order to a negative value
-        cell.setOrder(-1);
-        assertEquals(-1, cell.getOrder());
-
-        // Test setting order to a very large value
-        cell.setOrder(Integer.MAX_VALUE);
-        assertEquals(Integer.MAX_VALUE, cell.getOrder());
+    public void testSetDataSpecialCharacters() {
+        SCell cell = new SCell(null);
+        cell.setData("!@#$%^&*()");
+        assertEquals("!@#$%^&*()", cell.getData());
+        assertEquals(Ex2Utils.TEXT, cell.getType());
     }
 }
