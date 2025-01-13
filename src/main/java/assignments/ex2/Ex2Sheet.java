@@ -12,37 +12,40 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Implementation of a simple spreadsheet that supports basic operations like
- * setting, retrieving, and evaluating cell values. Includes formula parsing and
- * evaluation.
+ * A simplified implementation of a spreadsheet that supports basic operations
+ * like setting, retrieving, and evaluating cell values, including formula
+ * parsing
+ * and evaluation.
  */
 public class Ex2Sheet implements Sheet {
     private Cell[][] table;
 
     // Constructors
+
     /**
      * Constructs a new Ex2Sheet with the specified width and height.
-     * 
-     * @param width  the width of the spreadsheet
-     * @param height the height of the spreadsheet
+     *
+     * @param width  the number of columns
+     * @param height the number of rows
      */
     public Ex2Sheet(int width, int height) {
         table = new SCell[width][height];
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                table[x][y] = new SCell(Ex2Utils.EMPTY_CELL); // Initialize each cell with an empty value
+                table[x][y] = new SCell(Ex2Utils.EMPTY_CELL);
             }
         }
     }
 
     /**
-     * Constructs a new Ex2Sheet with default width and height.
+     * Constructs a new Ex2Sheet with default dimensions.
      */
     public Ex2Sheet() {
         this(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
     }
 
-    // Basic operations
+    // Overridden Methods from Sheet Interface
+
     @Override
     public boolean isIn(int x, int y) {
         return x >= 0 && x < table.length && y >= 0 && y < table[0].length;
@@ -60,23 +63,19 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public void set(int x, int y, String data) {
-
         if (isIn(x, y)) {
-            if (data == null) {
-                data = Ex2Utils.EMPTY_CELL;
-            }
-            table[x][y] = new SCell(data); // Set the data in the specified cell
+            table[x][y].setData(data != null ? data : Ex2Utils.EMPTY_CELL);
         }
     }
 
     @Override
     public Cell get(int x, int y) {
-        return isIn(x, y) ? table[x][y] : null; // Return the cell or null if out of bounds
+        return isIn(x, y) ? table[x][y] : null;
     }
 
     @Override
     public Cell get(String coords) {
-        CellEntry entry = new CellEntry(coords); // Parse coordinates like "A1" into indices
+        CellEntry entry = new CellEntry(coords);
         if (entry.isValid() && isIn(entry.getX(), entry.getY())) {
             return get(entry.getX(), entry.getY());
         }
@@ -85,7 +84,11 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public String value(int x, int y) {
-        return get(x, y).getData() != null ? eval(x, y) : Ex2Utils.EMPTY_CELL; // Evaluate cell value if non-empty
+        Cell cell = get(x, y);
+        if (cell == null || cell.getData().isEmpty()) {
+            return Ex2Utils.EMPTY_CELL;
+        }
+        return eval(x, y);
     }
 
     @Override
@@ -94,8 +97,11 @@ public class Ex2Sheet implements Sheet {
         if (cell == null) {
             return Ex2Utils.EMPTY_CELL;
         }
+        if (cell.getType() == Ex2Utils.ERR_FORM_FORMAT) {
+            return Ex2Utils.ERR_FORM;
+        }
         if (cell.getType() == Ex2Utils.ERR_CYCLE_FORM) {
-            return Ex2Utils.ERR_CYCLE; // Correctly handle cycle error
+            return Ex2Utils.ERR_CYCLE;
         }
         if (cell.getType() == Ex2Utils.FORM) {
             return evaluateFormula(cell.getData());
@@ -107,74 +113,131 @@ public class Ex2Sheet implements Sheet {
     public void eval() {
         for (int x = 0; x < width(); x++) {
             for (int y = 0; y < height(); y++) {
-                eval(x, y); // Evaluate all cells
+                eval(x, y);
             }
         }
     }
 
-    // Formula evaluation
+    @Override
+    public int[][] depth() {
+        int[][] depths = new int[width()][height()];
+        boolean[][] visited = new boolean[width()][height()];
+        for (int x = 0; x < width(); x++) {
+            for (int y = 0; y < height(); y++) {
+                depths[x][y] = computeDepth(x, y, visited);
+            }
+        }
+        return depths;
+    }
+
+    @Override
+    public void save(String fileName) throws IOException {
+        try (Writer writer = new FileWriter(fileName)) {
+            writer.write("I2CS ArielU: SpreadSheet (Ex2) assignment\n");
+            for (int x = 0; x < width(); x++) {
+                for (int y = 0; y < height(); y++) {
+                    Cell cell = get(x, y);
+                    if (cell != null && !cell.getData().isEmpty()) {
+                        writer.write(x + "," + y + "," + cell.getData() + "\n");
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void load(String fileName) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            // Initialize all cells to empty
+            for (int x = 0; x < width(); x++) {
+                for (int y = 0; y < height(); y++) {
+                    table[x][y].setData(Ex2Utils.EMPTY_CELL);
+                }
+            }
+
+            // Validate header
+            String header = reader.readLine();
+            if (header == null || !header.equals("I2CS ArielU: SpreadSheet (Ex2) assignment")) {
+                throw new IOException("Invalid file format: Incorrect header.");
+            }
+
+            // Read cell data
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length != 3) {
+                    throw new IOException("Invalid line format: " + line);
+                }
+                int x = Integer.parseInt(parts[0].trim());
+                int y = Integer.parseInt(parts[1].trim());
+                String data = parts[2].trim();
+                if (isIn(x, y)) {
+                    table[x][y].setData(data);
+                } else {
+                    throw new IOException("Cell coordinates out of bounds: " + line);
+                }
+            }
+        }
+    }
+
+    // Private Helper Methods
+
     /**
-     * Evaluates a formula and returns the result as a string.
-     * 
+     * Evaluates a formula string and returns the result.
+     *
      * @param formula the formula to evaluate
-     * @return the result of the formula evaluation
+     * @return the evaluation result or an error string
      */
     public String evaluateFormula(String formula) {
-        if (formula == null || formula.isEmpty() || !formula.startsWith("=")) {
-            return Ex2Utils.ERR_FORM; // Return an error if not a valid formula
+        if (formula == null || !formula.startsWith("=")) {
+            return Ex2Utils.ERR_FORM;
         }
 
-        formula = formula.substring(1); // Remove the '=' at the beginning
-
+        String expression = formula.substring(1);
         try {
-            // Convert formula to postfix notation (Reverse Polish Notation)
-            List<String> postfix = infixToPostfix(formula);
-            // Evaluate the postfix expression
-            return String.valueOf(evaluatePostfix(postfix));
+            List<String> postfix = infixToPostfix(expression);
+            double result = evaluatePostfix(postfix);
+            return String.valueOf(result);
         } catch (Exception e) {
             return Ex2Utils.ERR_FORM;
         }
     }
 
     /**
-     * Converts an infix formula to postfix notation (Reverse Polish Notation).
-     * 
-     * @param formula the infix formula
-     * @return the postfix notation as a list of strings
+     * Converts an infix expression to postfix notation.
+     *
+     * @param expression the infix expression
+     * @return a list of tokens in postfix order
      */
-    private List<String> infixToPostfix(String formula) {
+    private List<String> infixToPostfix(String expression) {
         List<String> postfix = new ArrayList<>();
         Stack<String> operators = new Stack<>();
-        Pattern pattern = Pattern.compile("-?\\d+\\.?\\d*|[a-zA-Z]+\\d+|[()+\\-*/]");
-        Matcher matcher = pattern.matcher(formula);
-        boolean expectOperand = true; // Track if we expect an operand next
+        Pattern pattern = Pattern.compile("-?\\d+\\.?\\d*|[A-Za-z]\\d+|[()+\\-*/]");
+        Matcher matcher = pattern.matcher(expression);
+        boolean expectOperand = true;
 
         while (matcher.find()) {
             String token = matcher.group();
 
             if (token.equals("-") && expectOperand) {
-                // Handle unary minus by converting to special token
-                token = "u-";
+                token = "u-"; // Unary minus
             }
 
-            if (isNumber(token)) {
+            if (isNumber(token) || isCellReference(token)) {
                 postfix.add(token);
                 expectOperand = false;
-            } else if (isCellReference(token)) {
-                postfix.add(token);
-                expectOperand = false;
-            } else if ("(".equals(token)) {
+            } else if (token.equals("(")) {
                 operators.push(token);
                 expectOperand = true;
-            } else if (")".equals(token)) {
-                while (!operators.isEmpty() && !"(".equals(operators.peek())) {
+            } else if (token.equals(")")) {
+                while (!operators.isEmpty() && !operators.peek().equals("(")) {
                     postfix.add(operators.pop());
                 }
                 if (!operators.isEmpty()) {
-                    operators.pop(); // Remove "("
+                    operators.pop(); // Remove '('
                 }
                 expectOperand = false;
-            } else if (isOperator(token) || token.equals("u-")) {
+            } else if (isOperator(token)) {
                 while (!operators.isEmpty() && precedence(operators.peek()) >= precedence(token)) {
                     postfix.add(operators.pop());
                 }
@@ -184,9 +247,9 @@ public class Ex2Sheet implements Sheet {
         }
 
         while (!operators.isEmpty()) {
-            String operator = operators.pop();
-            if (!"(".equals(operator)) {
-                postfix.add(operator);
+            String op = operators.pop();
+            if (!op.equals("(")) {
+                postfix.add(op);
             }
         }
 
@@ -194,127 +257,45 @@ public class Ex2Sheet implements Sheet {
     }
 
     /**
-     * Evaluates a postfix expression and returns the result.
-     * 
-     * @param postfix the postfix expression as a list of strings
-     * @return the result of the evaluation
+     * Evaluates a postfix expression and returns the numerical result.
+     *
+     * @param postfix the postfix expression
+     * @return the result of evaluation
      */
     private double evaluatePostfix(List<String> postfix) {
-        Stack<Double> values = new Stack<>();
+        Stack<Double> stack = new Stack<>();
 
         for (String token : postfix) {
             if (isNumber(token)) {
-                values.push(Double.valueOf(token));
+                stack.push(Double.parseDouble(token));
             } else if (isCellReference(token)) {
                 Cell cell = get(token);
                 if (cell != null) {
-                    String cellValue = eval(new CellEntry(token).getX(), new CellEntry(token).getY());
-                    values.push(Double.valueOf(cellValue));
+                    String cellVal = eval(new CellEntry(token).getX(), new CellEntry(token).getY());
+                    stack.push(Double.parseDouble(cellVal));
+                } else {
+                    stack.push(0.0);
                 }
             } else if (token.equals("u-")) {
-                if (values.isEmpty()) {
-                    throw new IllegalArgumentException("Invalid expression");
-                }
-                double val = values.pop();
-                values.push(-val);
+                double val = stack.pop();
+                stack.push(-val);
             } else if (isOperator(token)) {
-                if (values.size() < 2) {
-                    throw new IllegalArgumentException("Invalid expression");
-                }
-                double b = values.pop();
-                double a = values.pop();
-                values.push(applyOperator(a, b, token));
+                double b = stack.pop();
+                double a = stack.pop();
+                stack.push(applyOperator(a, b, token));
             }
         }
 
-        if (values.size() != 1) {
-            throw new IllegalArgumentException("Invalid expression");
-        }
-        return values.pop();
+        return stack.pop();
     }
 
     /**
-     * Checks if a token is a number.
-     * 
-     * @param token the token to check
-     * @return true if the token is a number, false otherwise
-     */
-    private boolean isNumber(String token) {
-        return token.matches("\\d+\\.?\\d*");
-    }
-
-    /**
-     * Checks if a token is a cell reference.
-     * 
-     * @param token the token to check
-     * @return true if the token is a cell reference, false otherwise
-     */
-    private boolean isCellReference(String token) {
-        return token.matches("[a-zA-Z]\\d+");
-    }
-
-    /**
-     * Checks if a token is an operator.
-     * 
-     * @param token the token to check
-     * @return true if the token is an operator, false otherwise
-     */
-    private boolean isOperator(String token) {
-        return "+-*/".contains(token) || token.equals("u-");
-    }
-
-    /**
-     * Returns the precedence of an operator.
-     * 
-     * @param operator the operator
-     * @return the precedence of the operator
-     */
-    private int precedence(String operator) {
-        return switch (operator) {
-            case "+", "-" -> 1;
-            case "*", "/" -> 2;
-            case "u-" -> 3;
-            default -> -1;
-        };
-    }
-
-    /**
-     * Applies an operator to two operands and returns the result.
-     * 
-     * @param a        the first operand
-     * @param b        the second operand
-     * @param operator the operator
-     * @return the result of applying the operator
-     */
-    private double applyOperator(double a, double b, String operator) {
-        return switch (operator) {
-            case "+" -> a + b;
-            case "-" -> a - b;
-            case "*" -> a * b;
-            case "/" -> a / b;
-            default -> throw new IllegalArgumentException("Invalid operator");
-        };
-    }
-
-    // Depth calculation
-    @Override
-    public int[][] depth() {
-        int[][] depths = new int[width()][height()];
-        for (int x = 0; x < width(); x++) {
-            for (int y = 0; y < height(); y++) {
-                depths[x][y] = computeDepth(x, y, new boolean[width()][height()]); // Updated depth calculation
-            }
-        }
-        return depths;
-    }
-
-    /**
-     * Computes the depth of a cell.
-     * 
-     * @param x       the x-coordinate of the cell
-     * @param y       the y-coordinate of the cell
-     * @param visited a boolean array to track visited cells
-     * @return the depth of the cell
+     * Computes the depth of a cell based on its dependencies.
+     *
+     * @param x       the column index
+     * @param y       the row index
+     * @param visited tracks visited cells to detect cycles
+     * @return the depth value or Ex2Utils.ERR in case of a cycle
      */
     private int computeDepth(int x, int y, boolean[][] visited) {
         if (!isIn(x, y)) {
@@ -324,14 +305,17 @@ public class Ex2Sheet implements Sheet {
             get(x, y).setType(Ex2Utils.ERR_CYCLE_FORM);
             return Ex2Utils.ERR;
         }
-        visited[x][y] = true;
+
         Cell cell = get(x, y);
         if (cell.getType() != Ex2Utils.FORM) {
             return 0;
         }
-        String formula = cell.getData().substring(1); // Remove '='
+
+        visited[x][y] = true;
+        String formula = cell.getData().substring(1);
         List<String> tokens = infixToPostfix(formula);
         int maxDepth = 0;
+
         for (String token : tokens) {
             if (isCellReference(token)) {
                 CellEntry entry = new CellEntry(token);
@@ -340,75 +324,47 @@ public class Ex2Sheet implements Sheet {
                     return Ex2Utils.ERR;
                 }
                 maxDepth = Math.max(maxDepth, depth);
-            } else if (isNumber(token)) {
-                // Handle numeric values
-                int depth = 0; // Numeric values have a depth of 0
-                maxDepth = Math.max(maxDepth, depth);
             }
         }
+
         visited[x][y] = false;
         return 1 + maxDepth;
     }
 
-    // File operations
-    @Override
-    public void save(String fileName) throws IOException {
-        try (Writer writer = new FileWriter(fileName)) {
-            writer.write("I2CS ArielU: SpreadSheet (Ex2) assignment\n"); // Write header
-            for (int x = 0; x < width(); x++) {
-                for (int y = 0; y < height(); y++) {
-                    Cell cell = get(x, y);
-                    if (cell != null && !cell.getData().isEmpty()) {
-                        writer.write(x + "," + y + "," + cell.getData() + "\n");
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new IOException("Failed to save spreadsheet to file: " + fileName, e);
+    // Utility Methods
+
+    private boolean isNumber(String token) {
+        return token.matches("-?\\d+\\.?\\d*");
+    }
+
+    private boolean isCellReference(String token) {
+        return token.matches("[A-Za-z]\\d+");
+    }
+
+    private boolean isOperator(String token) {
+        return "+-*/".contains(token) || token.equals("u-");
+    }
+
+    private int precedence(String operator) {
+        switch (operator) {
+            case "u-":
+                return 3;
+            case "*", "/":
+                return 2;
+            case "+", "-":
+                return 1;
+            default:
+                return -1;
         }
     }
 
-    @Override
-    public void load(String fileName) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
-            // Clear the existing table
-            table = new SCell[width()][height()];
-            for (int x = 0; x < width(); x++) {
-                for (int y = 0; y < height(); y++) {
-                    table[x][y] = new SCell(Ex2Utils.EMPTY_CELL);
-                }
-            }
-
-            // Validate the file header
-            String header = reader.readLine();
-            if (header == null || !header.equals("I2CS ArielU: SpreadSheet (Ex2) assignment")) {
-                throw new IOException("Invalid file format: Missing or incorrect header.");
-            }
-
-            // Read and parse each line
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",");
-                if (parts.length != 3) {
-                    throw new IOException("Invalid file format: Incorrect number of columns in line: " + line);
-                }
-
-                try {
-                    int x = Integer.parseInt(parts[0].trim());
-                    int y = Integer.parseInt(parts[1].trim());
-                    String data = parts[2].trim();
-
-                    if (isIn(x, y)) {
-                        table[x][y] = new SCell(data);
-                    } else {
-                        throw new IOException("Invalid cell coordinates in line: " + line);
-                    }
-                } catch (NumberFormatException e) {
-                    throw new IOException("Invalid cell coordinates format in line: " + line, e);
-                }
-            }
-        } catch (IOException e) {
-            throw new IOException("Failed to load spreadsheet from file: " + fileName, e);
-        }
+    private double applyOperator(double a, double b, String operator) {
+        return switch (operator) {
+            case "+" -> a + b;
+            case "-" -> a - b;
+            case "*" -> a * b;
+            case "/" -> b != 0 ? a / b : Ex2Utils.ERR;
+            default -> 0;
+        };
     }
 }

@@ -19,6 +19,49 @@ public class SCell implements Cell {
         return data;
     }
 
+    /**
+     * Checks if the provided data is a valid formula.
+     *
+     * @param data the data to check
+     * @return true if the data is a valid formula, false otherwise
+     */
+    public boolean isForm(String data) {
+        if (!data.startsWith("=") || data.length() < 2) {
+            return false;
+        }
+
+        String formula = data.substring(1).trim();
+        String[] tokens = formula.split("\\s+");
+        boolean expectOperand = true;
+
+        for (String token : tokens) {
+            if (token.isEmpty()) {
+                continue;
+            }
+
+            if (token.matches("[A-Za-z]\\d+")) { // Cell reference like A1, B2
+                if (!expectOperand) {
+                    return false;
+                }
+                expectOperand = false;
+            } else if (token.matches("-?\\d+\\.?\\d*")) { // Number
+                if (!expectOperand) {
+                    return false;
+                }
+                expectOperand = false;
+            } else if ("+-*/".contains(token)) { // Operator
+                if (expectOperand) {
+                    return false;
+                }
+                expectOperand = true;
+            } else {
+                return false; // Invalid token
+            }
+        }
+
+        return !expectOperand; // Must end with an operand
+    }
+
     @Override
     public void setData(String data) {
         if (data == null) {
@@ -26,7 +69,11 @@ public class SCell implements Cell {
         }
         this.data = data;
         if (data.startsWith("=")) {
-            setType(Ex2Utils.FORM);
+            if (isForm(data)) {
+                setType(Ex2Utils.FORM);
+            } else {
+                setType(Ex2Utils.ERR_FORM_FORMAT);
+            }
         } else if (isNumber(data)) {
             setType(Ex2Utils.NUMBER);
         } else {
