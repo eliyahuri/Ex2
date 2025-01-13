@@ -1,14 +1,20 @@
 package assignments.ex2;
 
-/**
- * SCell represents a single cell in the spreadsheet, capable of storing data
- * in various formats such as text, numbers, or formulas. The cell determines
- * its type based on the provided data.
- */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 public class SCell implements Cell {
     private String data;
     private int type;
     private int order;
+
+    // Define operator precedence
+    private static final Map<String, Integer> OP_PRECEDENCE = Map.of(
+            "+", 1,
+            "-", 1,
+            "*", 2,
+            "/", 2);
 
     public SCell(String data) {
         setData(data);
@@ -26,40 +32,24 @@ public class SCell implements Cell {
      * @return true if the data is a valid formula, false otherwise
      */
     public boolean isForm(String data) {
-        if (!data.startsWith("=") || data.length() < 2) {
+        if (data == null || !data.startsWith("=") || data.length() < 2) {
             return false;
         }
 
-        String formula = data.substring(1).trim();
-        String[] tokens = formula.split("\\s+");
-        boolean expectOperand = true;
-
-        for (String token : tokens) {
-            if (token.isEmpty()) {
-                continue;
-            }
-
-            if (token.matches("[A-Za-z]\\d+")) { // Cell reference like A1, B2
-                if (!expectOperand) {
-                    return false;
-                }
-                expectOperand = false;
-            } else if (token.matches("-?\\d+\\.?\\d*")) { // Number
-                if (!expectOperand) {
-                    return false;
-                }
-                expectOperand = false;
-            } else if ("+-*/".contains(token)) { // Operator
-                if (expectOperand) {
-                    return false;
-                }
-                expectOperand = true;
-            } else {
-                return false; // Invalid token
-            }
+        String expression = data.substring(1).trim();
+        if (expression.isEmpty()) {
+            return false;
         }
 
-        return !expectOperand; // Must end with an operand
+        try {
+            List<String> tokens = tokenize(expression);
+            Parser parser = new Parser(tokens);
+            parser.parseExpression();
+            // After parsing, there should be no remaining tokens
+            return parser.isAtEnd();
+        } catch (ParseException e) {
+            return false;
+        }
     }
 
     @Override
@@ -113,6 +103,158 @@ public class SCell implements Cell {
             return true;
         } catch (NumberFormatException e) {
             return false;
+        }
+    }
+
+    /**
+     * Tokenizes the input expression into a list of tokens.
+     *
+     * @param expr the expression to tokenize
+     * @return a list of tokens
+     * @throws ParseException if an invalid token is encountered
+     */
+    private List<String> tokenize(String expr) throws ParseException {
+        List<String> tokens = new ArrayList<>();
+        int i = 0;
+        while (i < expr.length()) {
+            char c = expr.charAt(i);
+            if (Character.isWhitespace(c)) {
+                i++;
+                continue;
+            }
+
+            if (c == '(' || c == ')' || OP_PRECEDENCE.containsKey(String.valueOf(c))) {
+                tokens.add(String.valueOf(c));
+                i++;
+            } else if (Character.isDigit(c) || c == '.') {
+                StringBuilder sb = new StringBuilder();
+                boolean hasDot = false;
+                while (i < expr.length() && (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) {
+                    if (expr.charAt(i) == '.') {
+                        if (hasDot) {
+                            throw new ParseException("Multiple decimal points in number");
+                        }
+                        hasDot = true;
+                    }
+                    sb.append(expr.charAt(i));
+                    i++;
+                }
+                tokens.add(sb.toString());
+            } else if (Character.isLetter(c)) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(c);
+                i++;
+                while (i < expr.length() && Character.isLetterOrDigit(expr.charAt(i))) {
+                    sb.append(expr.charAt(i));
+                    i++;
+                }
+                tokens.add(sb.toString());
+            } else {
+                throw new ParseException("Invalid character encountered: " + c);
+            }
+        }
+        return tokens;
+    }
+
+    /**
+     * Custom exception for parsing errors.
+     */
+    private static class ParseException extends Exception {
+        public ParseException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Recursive descent parser for validating formulas.
+     */
+    private class Parser {
+        private final List<String> tokens;
+        private int position;
+
+        public Parser(List<String> tokens) {
+            this.tokens = tokens;
+            this.position = 0;
+        }
+
+        public void parseExpression() throws ParseException {
+            parseTerm();
+            while (match("+", "-")) {
+                parseTerm();
+            }
+        }
+
+        private void parseTerm() throws ParseException {
+            parseFactor();
+            while (match("*", "/")) {
+                parseFactor();
+            }
+        }
+
+        private void parseFactor() throws ParseException {
+            if (match("(")) {
+                parseExpression();
+                if (!match(")")) {
+                    throw new ParseException("Expected closing parenthesis");
+                }
+            } else if (matchNumber() || matchCellReference()) {
+                // Operand parsed successfully
+            } else {
+                throw new ParseException("Expected number, cell reference, or parenthesis");
+            }
+        }
+
+        private boolean match(String... expected) {
+            if (isAtEnd()) {
+                return false;
+            }
+            String current = peek();
+            for (String exp : expected) {
+                if (current.equals(exp)) {
+                    advance();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean matchNumber() {
+            if (isAtEnd()) {
+                return false;
+            }
+            String current = peek();
+            try {
+                Double.parseDouble(current);
+                advance();
+                return true;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+
+        private boolean matchCellReference() {
+            if (isAtEnd()) {
+                return false;
+            }
+            String current = peek();
+            // Cell reference pattern: [A-Z]+[0-9]+
+            if (current.matches("[A-Za-z]+\\d+")) {
+                advance();
+                return true;
+            }
+            return false;
+        }
+
+        private String peek() {
+            return tokens.get(position);
+        }
+
+        private String advance() {
+            return tokens.get(position++);
+        }
+
+        public boolean isAtEnd() {
+            return position >= tokens.size();
         }
     }
 }
