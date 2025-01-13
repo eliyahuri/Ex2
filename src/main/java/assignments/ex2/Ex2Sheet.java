@@ -363,8 +363,8 @@ public class Ex2Sheet implements Sheet {
             case "+" -> a + b;
             case "-" -> a - b;
             case "*" -> a * b;
-            case "/" -> b != 0 ? a / b : Ex2Utils.ERR;
-            default -> 0;
+            case "/" -> a / b;
+            default -> 0.0;
         };
     }
 }
