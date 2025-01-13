@@ -43,11 +43,10 @@ public class SCell implements Cell {
 
         try {
             List<String> tokens = tokenize(expression);
-            Parser parser = new Parser(tokens);
-            parser.parseExpression();
+            parseExpression(tokens);
             // After parsing, there should be no remaining tokens
-            return parser.isAtEnd();
-        } catch (ParseException e) {
+            return tokens.isEmpty();
+        } catch (IllegalArgumentException e) {
             return false;
         }
     }
@@ -111,28 +110,67 @@ public class SCell implements Cell {
      *
      * @param expr the expression to tokenize
      * @return a list of tokens
-     * @throws ParseException if an invalid token is encountered
+     * @throws IllegalArgumentException if an invalid token is encountered
      */
-    private List<String> tokenize(String expr) throws ParseException {
+    private List<String> tokenize(String expr) {
         List<String> tokens = new ArrayList<>();
         int i = 0;
-        while (i < expr.length()) {
+        int length = expr.length();
+        while (i < length) {
             char c = expr.charAt(i);
+
             if (Character.isWhitespace(c)) {
                 i++;
                 continue;
             }
 
+            // Handle operators and parentheses
             if (c == '(' || c == ')' || OP_PRECEDENCE.containsKey(String.valueOf(c))) {
-                tokens.add(String.valueOf(c));
-                i++;
-            } else if (Character.isDigit(c) || c == '.') {
+                // Check for unary minus
+                if (c == '-' && (tokens.isEmpty() || isOperator(tokens.get(tokens.size() - 1))
+                        || tokens.get(tokens.size() - 1).equals("("))) {
+                    // It's a unary minus, attach it to the number
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(c);
+                    i++;
+                    // After unary minus, expect a number or cell reference
+                    if (i < length) {
+                        char next = expr.charAt(i);
+                        if (Character.isDigit(next) || next == '.') {
+                            while (i < length && (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) {
+                                sb.append(expr.charAt(i));
+                                i++;
+                            }
+                            tokens.add(sb.toString());
+                            continue;
+                        } else if (Character.isLetter(next)) {
+                            while (i < length && Character.isLetterOrDigit(expr.charAt(i))) {
+                                sb.append(expr.charAt(i));
+                                i++;
+                            }
+                            tokens.add(sb.toString());
+                            continue;
+                        } else {
+                            throw new IllegalArgumentException("Invalid token after unary minus");
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Expression cannot end with unary minus");
+                    }
+                } else {
+                    tokens.add(String.valueOf(c));
+                    i++;
+                }
+                continue;
+            }
+
+            // Handle numbers
+            if (Character.isDigit(c) || c == '.') {
                 StringBuilder sb = new StringBuilder();
                 boolean hasDot = false;
-                while (i < expr.length() && (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) {
+                while (i < length && (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) {
                     if (expr.charAt(i) == '.') {
                         if (hasDot) {
-                            throw new ParseException("Multiple decimal points in number");
+                            throw new IllegalArgumentException("Multiple decimal points in number");
                         }
                         hasDot = true;
                     }
@@ -140,121 +178,100 @@ public class SCell implements Cell {
                     i++;
                 }
                 tokens.add(sb.toString());
-            } else if (Character.isLetter(c)) {
+                continue;
+            }
+
+            // Handle cell references
+            if (Character.isLetter(c)) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(c);
                 i++;
-                while (i < expr.length() && Character.isLetterOrDigit(expr.charAt(i))) {
+                while (i < length && Character.isLetterOrDigit(expr.charAt(i))) {
                     sb.append(expr.charAt(i));
                     i++;
                 }
                 tokens.add(sb.toString());
-            } else {
-                throw new ParseException("Invalid character encountered: " + c);
+                continue;
             }
+
+            throw new IllegalArgumentException("Invalid character encountered: " + c);
         }
         return tokens;
     }
 
     /**
-     * Custom exception for parsing errors.
+     * Parses the expression using recursive descent without using a separate Parser
+     * class.
+     *
+     * @param tokens the list of tokens to parse
+     * @throws IllegalArgumentException if a parsing error occurs
      */
-    private static class ParseException extends Exception {
-        public ParseException(String message) {
-            super(message);
+    private void parseExpression(List<String> tokens) {
+        parseExpression(tokens, 0);
+    }
+
+    /**
+     * Parses the expression recursively and updates the tokens list by removing
+     * consumed tokens.
+     *
+     * @param tokens        the list of tokens
+     * @param minPrecedence the minimum precedence for the current parsing context
+     * @return the parsed value (not used in validation)
+     */
+    private void parseExpression(List<String> tokens, int minPrecedence) {
+        // Parse the left-hand side (lhs)
+        parsePrimary(tokens);
+
+        while (!tokens.isEmpty() && isOperator(tokens.get(0)) && OP_PRECEDENCE.get(tokens.get(0)) >= minPrecedence) {
+            String operator = tokens.remove(0);
+            int precedence = OP_PRECEDENCE.get(operator);
+            // Parse the right-hand side (rhs) with higher precedence
+            parseExpression(tokens, precedence + 1);
         }
     }
 
     /**
-     * Recursive descent parser for validating formulas.
+     * Parses a primary expression (number, cell reference, or parenthesized
+     * expression).
+     *
+     * @param tokens the list of tokens
      */
-    private class Parser {
-        private final List<String> tokens;
-        private int position;
-
-        public Parser(List<String> tokens) {
-            this.tokens = tokens;
-            this.position = 0;
+    private void parsePrimary(List<String> tokens) {
+        if (tokens.isEmpty()) {
+            throw new IllegalArgumentException("Unexpected end of expression");
         }
 
-        public void parseExpression() throws ParseException {
-            parseTerm();
-            while (match("+", "-")) {
-                parseTerm();
+        String token = tokens.remove(0);
+        if (token.equals("(")) {
+            parseExpression(tokens, 0);
+            if (tokens.isEmpty() || !tokens.remove(0).equals(")")) {
+                throw new IllegalArgumentException("Expected closing parenthesis");
             }
-        }
-
-        private void parseTerm() throws ParseException {
-            parseFactor();
-            while (match("*", "/")) {
-                parseFactor();
-            }
-        }
-
-        private void parseFactor() throws ParseException {
-            if (match("(")) {
-                parseExpression();
-                if (!match(")")) {
-                    throw new ParseException("Expected closing parenthesis");
-                }
-            } else if (matchNumber() || matchCellReference()) {
-                // Operand parsed successfully
-            } else {
-                throw new ParseException("Expected number, cell reference, or parenthesis");
-            }
-        }
-
-        private boolean match(String... expected) {
-            if (isAtEnd()) {
-                return false;
-            }
-            String current = peek();
-            for (String exp : expected) {
-                if (current.equals(exp)) {
-                    advance();
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private boolean matchNumber() {
-            if (isAtEnd()) {
-                return false;
-            }
-            String current = peek();
-            try {
-                Double.parseDouble(current);
-                advance();
-                return true;
-            } catch (NumberFormatException e) {
-                return false;
-            }
-        }
-
-        private boolean matchCellReference() {
-            if (isAtEnd()) {
-                return false;
-            }
-            String current = peek();
-            // Cell reference pattern: [A-Z]+[0-9]+
-            if (current.matches("[A-Za-z]+\\d+")) {
-                advance();
-                return true;
-            }
-            return false;
-        }
-
-        private String peek() {
-            return tokens.get(position);
-        }
-
-        private String advance() {
-            return tokens.get(position++);
-        }
-
-        public boolean isAtEnd() {
-            return position >= tokens.size();
+        } else if (isNumber(token) || isCellReference(token)) {
+            // Valid primary expression
+        } else {
+            throw new IllegalArgumentException("Expected number, cell reference, or parenthesis");
         }
     }
+
+    /**
+     * Checks if the token is an operator.
+     *
+     * @param token the token to check
+     * @return true if it's an operator, false otherwise
+     */
+    private boolean isOperator(String token) {
+        return OP_PRECEDENCE.containsKey(token);
+    }
+
+    /**
+     * Checks if the token is a cell reference.
+     *
+     * @param token the token to check
+     * @return true if it's a cell reference, false otherwise
+     */
+    private boolean isCellReference(String token) {
+        return token.matches("[A-Za-z]+\\d+");
+    }
+
 }
